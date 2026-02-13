@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tüm Telefonlar - Kıyaslasana</title>
+  <meta name="description" content="Tüm telefon modellerini keşfet, filtrele ve karşılaştır.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a href="#main-content" class="sr-only skip-to-content">Ana içeriğe atla</a>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-top">
+      <div class="container header-inner">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">K</div>
+          <span>Kıyaslasana</span>
+        </a>
+        
+        <nav class="main-nav" aria-label="Ana navigasyon">
+          <a href="phones.html" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="2" width="14" height="20" rx="2"/>
+              <line x1="12" y1="18" x2="12" y2="18"/>
+            </svg>
+            <span>Telefonlar</span>
+          </a>
+          <a href="#" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+            </svg>
+            <span>Tabletler</span>
+          </a>
+          <a href="#" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="15" rx="2"/>
+              <polyline points="17 2 12 7 7 2"/>
+            </svg>
+            <span>Fırsatlar</span>
+          </a>
+          <a href="compare.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+            <span>Karşılaştır</span>
+          </a>
+        </nav>
+        
+        <div class="header-actions">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="search" class="search-input" placeholder="Telefon, tablet ara..." aria-label="Ara">
+          </div>
+          
+          <button class="header-btn" aria-label="Bildirimler">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="badge-count">3</span>
+          </button>
+          
+          <button class="header-btn mobile-menu-btn" aria-label="Menü">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="sub-nav">
+      <div class="container sub-nav-inner">
+        <a href="phones.html" class="active">Tüm Telefonlar</a>
+        <a href="#">Markalar</a>
+        <a href="#">Yenilenmiş</a>
+        <a href="compare.html">Karşılaştır</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main id="main-content">
+    <!-- Page Header -->
+    <section class="hero" style="padding: var(--space-8) 0;">
+      <div class="container">
+        <h1 class="hero-title" style="font-size: var(--text-h2);">Tüm Telefonlar</h1>
+        <p class="hero-subtitle" style="margin-bottom: 0;">
+          Filtreleri kullanarak aramanı daralt, en uygun telefonu bul.
+        </p>
+      </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="section" style="padding-top: var(--space-6);">
+      <div class="container">
+        <div style="display: grid; grid-template-columns: 280px 1fr; gap: var(--space-8);">
+          <!-- Filter Panel -->
+          <aside class="filter-panel" style="height: fit-content; position: sticky; top: 140px;">
+            <div class="filter-section">
+              <h3 class="filter-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="21" y1="10" x2="3" y2="10"/>
+                  <line x1="21" y1="6" x2="3" y2="6"/>
+                  <line x1="21" y1="14" x2="3" y2="14"/>
+                  <line x1="21" y1="18" x2="3" y2="18"/>
+                </svg>
+                Sıralama
+              </h3>
+              <select class="sort-select" style="width: 100%;">
+                <option>Puan (Yüksekten Düşüğe)</option>
+                <option>Fiyat (Düşükten Yükseğe)</option>
+                <option>Fiyat (Yüksekten Düşüğe)</option>
+                <option>En Yeniler</option>
+              </select>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="6" x2="12" y2="12"/>
+                  <line x1="12" y1="12" x2="16" y2="16"/>
+                </svg>
+                Fiyat Aralığı
+              </h3>
+              <div class="price-range">
+                <input type="number" class="price-input" placeholder="Min" value="5000">
+                <span>-</span>
+                <input type="number" class="price-input" placeholder="Max" value="100000">
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                  <line x1="8" y1="21" x2="16" y2="21"/>
+                  <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+                Markalar
+              </h3>
+              <div class="filter-options">
+                <label class="filter-option">
+                  <input type="checkbox" checked>
+                  <span>Samsung</span>
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox" checked>
+                  <span>Apple</span>
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox" checked>
+                  <span>Xiaomi</span>
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox">
+                  <span>OnePlus</span>
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox">
+                  <span>OPPO</span>
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox">
+                  <span>vivo</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="5" y="2" width="14" height="20" rx="2"/>
+                  <line x1="12" y1="18" x2="12" y2="18"/>
+                </svg>
+                Özellikler
+              </h3>
+              <div class="filter-chips">
+                <button class="filter-chip active">5G</button>
+                <button class="filter-chip">NFC</button>
+                <button class="filter-chip">Kablosuz Şarj</button>
+                <button class="filter-chip active">120Hz</button>
+                <button class="filter-chip">AMOLED</button>
+                <button class="filter-chip">IP68</button>
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="4" y="4" width="16" height="16" rx="2"/>
+                </svg>
+                RAM
+              </h3>
+              <div class="filter-chips">
+                <button class="filter-chip">4GB</button>
+                <button class="filter-chip">6GB</button>
+                <button class="filter-chip active">8GB</button>
+                <button class="filter-chip active">12GB</button>
+                <button class="filter-chip">16GB</button>
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="4" y="4" width="16" height="16" rx="2"/>
+                </svg>
+                Depolama
+              </h3>
+              <div class="filter-chips">
+                <button class="filter-chip">64GB</button>
+                <button class="filter-chip">128GB</button>
+                <button class="filter-chip active">256GB</button>
+                <button class="filter-chip">512GB</button>
+                <button class="filter-chip">1TB</button>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Products Grid -->
+          <div>
+            <!-- Sort Bar -->
+            <div class="sort-bar">
+              <p class="sort-results"><strong>24</strong> sonuç bulundu</p>
+              <div class="sort-controls">
+                <span class="sort-label">Sırala:</span>
+                <select class="sort-select">
+                  <option>Puan (Yüksekten Düşüğe)</option>
+                  <option>Fiyat (Düşükten Yükseğe)</option>
+                  <option>Fiyat (Yüksekten Düşüğe)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Products -->
+            <div class="products-grid">
+              <!-- Product Cards (same as index.html) -->
+              <article class="product-card">
+                <div class="product-image">
+                  <div class="product-score">
+                    <span class="product-score-value">9.8</span>
+                    <span class="product-score-label">Puan</span>
+                  </div>
+                  <div class="product-badges">
+                    <span class="badge badge-5g">5G</span>
+                    <span class="badge badge-feature">120Hz</span>
+                  </div>
+                  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f0f0f0' width='200' height='300' rx='20'/%3E%3Crect fill='%23333' x='20' y='30' width='160' height='240' rx='15'/%3E%3Ccircle fill='%23000' cx='100' cy='270' r='12'/%3E%3C/svg%3E" alt="Samsung Galaxy S25 Ultra">
+                </div>
+                <div class="product-info">
+                  <p class="product-brand">Samsung</p>
+                  <h3 class="product-name">Galaxy S25 Ultra</h3>
+                  <div class="product-specs">
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+                      6.9"
+                    </span>
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                      256GB
+                    </span>
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                      200MP
+                    </span>
+                  </div>
+                  <div class="product-footer">
+                    <div class="product-price">
+                      <span class="product-price-prefix">₺</span>64.999
+                    </div>
+                    <div class="product-actions">
+                      <button class="product-action-btn" aria-label="Karşılaştırmaya ekle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                          <path d="M2 17l10 5 10-5"/>
+                          <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                      </button>
+                      <button class="product-action-btn" aria-label="Favorilere ekle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="product-card">
+                <div class="product-image">
+                  <div class="product-score">
+                    <span class="product-score-value">9.6</span>
+                    <span class="product-score-label">Puan</span>
+                  </div>
+                  <div class="product-badges">
+                    <span class="badge badge-5g">5G</span>
+                    <span class="badge badge-nfc">NFC</span>
+                  </div>
+                  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f0f0f0' width='200' height='300' rx='20'/%3E%3Crect fill='%231a1a2e' x='20' y='30' width='160' height='240' rx='15'/%3E%3Ccircle fill='%23000' cx='100' cy='270' r='12'/%3E%3C/svg%3E" alt="iPhone 16 Pro Max">
+                </div>
+                <div class="product-info">
+                  <p class="product-brand">Apple</p>
+                  <h3 class="product-name">iPhone 16 Pro Max</h3>
+                  <div class="product-specs">
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+                      6.7"
+                    </span>
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                      512GB
+                    </span>
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                      48MP
+                    </span>
+                  </div>
+                  <div class="product-footer">
+                    <div class="product-price">
+                      <span class="product-price-prefix">₺</span>89.999
+                    </div>
+                    <div class="product-actions">
+                      <button class="product-action-btn" aria-label="Karşılaştırmaya ekle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                          <path d="M2 17l10 5 10-5"/>
+                          <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                      </button>
+                      <button class="product-action-btn" aria-label="Favorilere ekle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="product-card">
+                <div class="product-image">
+                  <div class="product-score">
+                    <span class="product-score-value">9.5</span>
+                    <span class="product-score-label">Puan</span>
+                  </div>
+                  <div class="product-badges">
+                    <span class="badge badge-5g">5G</span>
+                    <span class="badge badge-feature">AMOLED</span>
+                  </div>
+                  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f0f0f0' width='200' height='300' rx='20'/%3E%3Crect fill='%234A3FD8' x='20' y='30' width='160' height='240' rx='15'/%3E%3Ccircle fill='%23000' cx='100' cy='270' r='12'/%3E%3C/svg%3E" alt="Xiaomi 15 Ultra">
+                </div>
+                <div class="product-info">
+                  <p class="product-brand">Xiaomi</p>
+                  <h3 class="product-name">15 Ultra</h3>
+                  <div class="product-specs">
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+                      6.73"
+                    </span>
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                      512GB
+                    </span>
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                      200MP
+                    </span>
+                  </div>
+                  <div class="product-footer">
+                    <div class="product-price">
+                      <span class="product-price-prefix">₺</span>54.999
+                    </div>
+                    <div class="product-actions">
+                      <button class="product-action-btn" aria-label="Karşılaştırmaya ekle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                          <path d="M2 17l10 5 10-5"/>
+                          <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                      </button>
+                      <button class="product-action-btn" aria-label="Favorilere ekle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="product-card">
+                <div class="product-image">
+                  <div class="product-score">
+                    <span class="product-score-value">9.3</span>
+                    <span class="product-score-label">Puan</span>
+                  </div>
+                  <div class="product-badges">
+                    <span class="badge badge-5g">5G</span>
+                    <span class="badge badge-feature">150W</span>
+                  </div>
+                  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f0f0f0' width='200' height='300' rx='20'/%3E%3Crect fill='%232d2d3a' x='20' y='30' width='160' height='240' rx='15'/%3E%3Ccircle fill='%23000' cx='100' cy='270' r='12'/%3E%3C/svg%3E" alt="OnePlus 13">
+                </div>
+                <div class="product-info">
+                  <p class="product-brand">OnePlus</p>
+                  <h3 class="product-name">13</h3>
+                  <div class="product-specs">
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+                      6.82"
+                    </span>
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                      256GB
+                    </span>
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                      50MP
+                    </span>
+                  </div>
+                  <div class="product-footer">
+                    <div class="product-price">
+                      <span class="product-price-prefix">₺</span>42.999
+                    </div>
+                    <div class="product-actions">
+                      <button class="product-action-btn" aria-label="Karşılaştırmaya ekle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                          <path d="M2 17l10 5 10-5"/>
+                          <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                      </button>
+                      <button class="product-action-btn" aria-label="Favorilere ekle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="product-card">
+                <div class="product-image">
+                  <div class="product-score">
+                    <span class="product-score-value">9.1</span>
+                    <span class="product-score-label">Puan</span>
+                  </div>
+                  <div class="product-badges">
+                    <span class="badge badge-5g">5G</span>
+                    <span class="badge badge-feature">65W</span>
+                  </div>
+                  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f0f0f0' width='200' height='300' rx='20'/%3E%3Crect fill='%23FF4081' x='20' y='30' width='160' height='240' rx='15'/%3E%3Ccircle fill='%23000' cx='100' cy='270' r='12'/%3E%3C/svg%3E" alt="OPPO Find X8 Pro">
+                </div>
+                <div class="product-info">
+                  <p class="product-brand">OPPO</p>
+                  <h3 class="product-name">Find X8 Pro</h3>
+                  <div class="product-specs">
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+                      6.78"
+                    </span>
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                      256GB
+                    </span>
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                      50MP
+                    </span>
+                  </div>
+                  <div class="product-footer">
+                    <div class="product-price">
+                      <span class="product-price-prefix">₺</span>48.999
+                    </div>
+                    <div class="product-actions">
+                      <button class="product-action-btn" aria-label="Karşılaştırmaya ekle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                          <path d="M2 17l10 5 10-5"/>
+                          <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                      </button>
+                      <button class="product-action-btn" aria-label="Favorilere ekle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="product-card">
+                <div class="product-image">
+                  <div class="product-score">
+                    <span class="product-score-value">8.9</span>
+                    <span class="product-score-label">Puan</span>
+                  </div>
+                  <div class="product-badges">
+                    <span class="badge badge-5g">5G</span>
+                    <span class="badge badge-nfc">NFC</span>
+                  </div>
+                  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f0f0f0' width='200' height='300' rx='20'/%3E%3Crect fill='%2300BCD4' x='20' y='30' width='160' height='240' rx='15'/%3E%3Ccircle fill='%23000' cx='100' cy='270' r='12'/%3E%3C/svg%3E" alt="vivo X200 Pro">
+                </div>
+                <div class="product-info">
+                  <p class="product-brand">vivo</p>
+                  <h3 class="product-name">X200 Pro</h3>
+                  <div class="product-specs">
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+                      6.78"
+                    </span>
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                      512GB
+                    </span>
+                    <span class="product-spec">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                      200MP
+                    </span>
+                  </div>
+                  <div class="product-footer">
+                    <div class="product-price">
+                      <span class="product-price-prefix">₺</span>52.999
+                    </div>
+                    <div class="product-actions">
+                      <button class="product-action-btn" aria-label="Karşılaştırmaya ekle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                          <path d="M2 17l10 5 10-5"/>
+                          <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                      </button>
+                      <button class="product-action-btn" aria-label="Favorilere ekle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <!-- Pagination -->
+            <nav class="pagination" aria-label="Sayfalama">
+              <button class="page-btn" disabled aria-label="Önceki sayfa">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+              <button class="page-btn active" aria-current="page">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+              <span style="color: var(--color-text-tertiary);">...</span>
+              <button class="page-btn">8</button>
+              <button class="page-btn" aria-label="Sonraki sayfa">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="footer-logo">
+            <div class="logo-icon">K</div>
+            <span>Kıyaslasana</span>
+          </a>
+          <p class="footer-description">
+            Türkiye'nin en kapsamlı telefon karşılaştırma platformu.
+          </p>
+          <div class="footer-social">
+            <a href="#" aria-label="Instagram"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="18" cy="6" r="1"/></svg></a>
+            <a href="#" aria-label="Twitter"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg></a>
+            <a href="#" aria-label="YouTube"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg></a>
+          </div>
+        </div>
+        <div>
+          <h4 class="footer-title">Keşfet</h4>
+          <ul class="footer-links">
+            <li><a href="phones.html">Tüm Telefonlar</a></li>
+            <li><a href="#">Markalar</a></li>
+            <li><a href="#">En Çok Satanlar</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Karşılaştır</h4>
+          <ul class="footer-links">
+            <li><a href="compare.html">Telefon Karşılaştır</a></li>
+            <li><a href="#">Popüler Karşılaştırmalar</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Hakkımızda</h4>
+          <ul class="footer-links">
+            <li><a href="#">Biz Kimiz</a></li>
+            <li><a href="#">İletişim</a></li>
+            <li><a href="#">Gizlilik Politikası</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copyright">© 2025 Kıyaslasana. Tüm hakları saklıdır.</p>
+        <div class="footer-legal">
+          <a href="#">Gizlilik</a>
+          <a href="#">Kullanım Koşulları</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
