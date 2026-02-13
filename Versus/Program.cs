@@ -1,7 +1,11 @@
+using Versus.Contracts;
+using Versus.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<IAppInfoProvider, AppInfoProvider>();
 
 var app = builder.Build();
 

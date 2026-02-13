@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Versus/Versus.csproj" />
+  <Project Path="tests/Versus.Tests/Versus.Tests.csproj" />
 </Solution>
