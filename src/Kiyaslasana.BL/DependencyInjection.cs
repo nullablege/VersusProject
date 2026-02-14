@@ -10,6 +10,7 @@ public static class DependencyInjection
     {
         services.AddMemoryCache();
         services.AddScoped<ITelefonService, TelefonService>();
+        services.AddScoped<ITelefonSitemapQuery, TelefonSitemapQuery>();
         services.AddSingleton<IAppInfoProvider, AppInfoProvider>();
 
         return services;

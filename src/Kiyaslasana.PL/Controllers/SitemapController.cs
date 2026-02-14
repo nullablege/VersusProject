@@ -8,31 +8,97 @@ namespace Kiyaslasana.PL.Controllers;
 
 public sealed class SitemapController : Controller
 {
-    private readonly ITelefonService _telefonService;
+    private const int TelefonSitemapPageSize = 40000;
 
-    public SitemapController(ITelefonService telefonService)
+    private readonly ITelefonSitemapQuery _telefonSitemapQuery;
+
+    public SitemapController(ITelefonSitemapQuery telefonSitemapQuery)
     {
-        _telefonService = telefonService;
+        _telefonSitemapQuery = telefonSitemapQuery;
     }
 
     [HttpGet("/sitemap.xml")]
-    [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneHour)]
+    [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneDay)]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var phones = await _telefonService.GetLatestAsync(200, ct);
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var baseUrl = GetBaseUrl();
+        var totalCount = await _telefonSitemapQuery.CountAsync(ct);
+        var totalPages = (int)Math.Ceiling(totalCount / (double)TelefonSitemapPageSize);
+
+        XNamespace ns = "http://www.sitemaps.org/schemas/sitemap/0.9";
+        var sitemapIndex = new XElement(ns + "sitemapindex");
+
+        sitemapIndex.Add(new XElement(ns + "sitemap",
+            new XElement(ns + "loc", $"{baseUrl}/sitemaps/static.xml")));
+
+        for (var page = 1; page <= totalPages; page++)
+        {
+            sitemapIndex.Add(new XElement(ns + "sitemap",
+                new XElement(ns + "loc", $"{baseUrl}/sitemaps/telefonlar-{page}.xml")));
+        }
+
+        var doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), sitemapIndex);
+        return Content(doc.ToString(SaveOptions.DisableFormatting), "application/xml; charset=utf-8");
+    }
+
+    [HttpGet("/sitemaps/static.xml")]
+    [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneDay)]
+    public IActionResult StaticSitemap()
+    {
+        var baseUrl = GetBaseUrl();
 
         XNamespace ns = "http://www.sitemaps.org/schemas/sitemap/0.9";
         var urlset = new XElement(ns + "urlset",
             new XElement(ns + "url", new XElement(ns + "loc", baseUrl + "/")),
-            new XElement(ns + "url", new XElement(ns + "loc", baseUrl + "/telefonlar")));
+            new XElement(ns + "url", new XElement(ns + "loc", baseUrl + "/telefonlar")),
+            new XElement(ns + "url", new XElement(ns + "loc", baseUrl + "/karsilastir")));
 
-        foreach (var phone in phones.Where(x => !string.IsNullOrWhiteSpace(x.Slug)))
+        var doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), urlset);
+        return Content(doc.ToString(SaveOptions.DisableFormatting), "application/xml; charset=utf-8");
+    }
+
+    [HttpGet("/sitemaps/telefonlar-{page:int}.xml")]
+    [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneDay, VaryByRouteValueNames = ["page"])]
+    public async Task<IActionResult> TelefonlarSitemap(int page, CancellationToken ct)
+    {
+        if (page < 1)
         {
-            urlset.Add(new XElement(ns + "url", new XElement(ns + "loc", $"{baseUrl}/telefon/{phone.Slug}")));
+            return NotFound();
+        }
+
+        var totalCount = await _telefonSitemapQuery.CountAsync(ct);
+        var totalPages = (int)Math.Ceiling(totalCount / (double)TelefonSitemapPageSize);
+
+        if (page > totalPages || totalPages == 0)
+        {
+            return NotFound();
+        }
+
+        var skip = (page - 1) * TelefonSitemapPageSize;
+        var slugs = await _telefonSitemapQuery.GetSlugsPageAsync(skip, TelefonSitemapPageSize, ct);
+
+        if (slugs.Count == 0)
+        {
+            return NotFound();
+        }
+
+        var baseUrl = GetBaseUrl();
+
+        XNamespace ns = "http://www.sitemaps.org/schemas/sitemap/0.9";
+        var urlset = new XElement(ns + "urlset");
+
+        foreach (var slug in slugs)
+        {
+            urlset.Add(new XElement(ns + "url",
+                new XElement(ns + "loc", $"{baseUrl}/telefon/{slug}")));
         }
 
         var doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), urlset);
-        return Content(doc.ToString(), "application/xml");
+        return Content(doc.ToString(SaveOptions.DisableFormatting), "application/xml; charset=utf-8");
+    }
+
+    private string GetBaseUrl()
+    {
+        return $"{Request.Scheme}://{Request.Host}";
     }
 }

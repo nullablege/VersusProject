@@ -34,7 +34,10 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
 - `/telefon/{slug}` phone detail
 - `/karsilastir` compare builder entry
 - `/karsilastir/{slugs}` compare (`slug1-vs-slug2` up to 4 for authenticated users)
-- `/sitemap.xml` sitemap scaffold
+- `/sitemap.xml` sitemap index
+- `/sitemaps/static.xml` static url sitemap page
+- `/sitemaps/telefonlar-{page}.xml` paged phone sitemap pages
+- `/robots.txt` robots with sitemap pointer
 - `/system/info` lightweight info endpoint
 
 ## Notes
@@ -45,5 +48,6 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
 - Compare URL format is `slug1-vs-slug2[-vs-slug3-vs-slug4]`.
 - OutputCache is enabled for anonymous GET pages with route-based variation.
 - EF Core migrations are in `src/Kiyaslasana.DAL/Migrations`.
+- Import tool is available at `tools/Kiyaslasana.Import` (see `docs/IMPORT.md`).
 
 See `docs/SETUP_DB.md` for database initialization.

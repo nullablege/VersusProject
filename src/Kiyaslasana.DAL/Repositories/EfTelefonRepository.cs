@@ -71,4 +71,30 @@ public sealed class EfTelefonRepository : ITelefonRepository
             .Take(safeTake)
             .ToListAsync(ct);
     }
+
+    public Task<int> CountAsync(CancellationToken ct)
+    {
+        return _dbContext.Telefonlar
+            .AsNoTracking()
+            .CountAsync(x => x.Slug != null && x.Slug != string.Empty, ct);
+    }
+
+    public async Task<IReadOnlyList<string>> GetSlugsPageAsync(int skip, int take, CancellationToken ct)
+    {
+        if (take <= 0)
+        {
+            return [];
+        }
+
+        var safeSkip = Math.Max(skip, 0);
+
+        return await _dbContext.Telefonlar
+            .AsNoTracking()
+            .Where(x => x.Slug != null && x.Slug != string.Empty)
+            .Select(x => x.Slug!)
+            .OrderBy(x => EF.Functions.Collate(x, "Latin1_General_100_BIN2"))
+            .Skip(safeSkip)
+            .Take(take)
+            .ToListAsync(ct);
+    }
 }

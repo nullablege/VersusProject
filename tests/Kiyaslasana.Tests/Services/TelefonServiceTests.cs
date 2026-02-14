@@ -87,5 +87,16 @@ public class TelefonServiceTests
             IReadOnlyList<Telefon> list = Array.Empty<Telefon>();
             return Task.FromResult(list);
         }
+
+        public Task<int> CountAsync(CancellationToken ct)
+        {
+            return Task.FromResult(0);
+        }
+
+        public Task<IReadOnlyList<string>> GetSlugsPageAsync(int skip, int take, CancellationToken ct)
+        {
+            IReadOnlyList<string> list = Array.Empty<string>();
+            return Task.FromResult(list);
+        }
     }
 }
