@@ -64,6 +64,8 @@ builder.Services.AddOutputCache(options =>
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
@@ -86,7 +88,6 @@ else
     app.UseHsts();
 }
 
-app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseResponseCompression();
 app.UseStaticFiles();

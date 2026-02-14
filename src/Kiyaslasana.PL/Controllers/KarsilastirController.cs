@@ -16,7 +16,6 @@ public sealed class KarsilastirController : SeoControllerBase
     }
 
     [HttpGet("/karsilastir")]
-    [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneHour)]
     public async Task<IActionResult> Builder([FromQuery] string? first, CancellationToken ct)
     {
         var viewModel = await BuildBuilderViewModelAsync(
