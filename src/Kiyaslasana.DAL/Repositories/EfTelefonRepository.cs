@@ -76,7 +76,7 @@ public sealed class EfTelefonRepository : ITelefonRepository
     {
         return _dbContext.Telefonlar
             .AsNoTracking()
-            .CountAsync(x => x.Slug != null && x.Slug != string.Empty, ct);
+            .CountAsync(x => !string.IsNullOrWhiteSpace(x.Slug), ct);
     }
 
     public async Task<IReadOnlyList<string>> GetSlugsPageAsync(int skip, int take, CancellationToken ct)
@@ -90,9 +90,9 @@ public sealed class EfTelefonRepository : ITelefonRepository
 
         return await _dbContext.Telefonlar
             .AsNoTracking()
-            .Where(x => x.Slug != null && x.Slug != string.Empty)
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
             .Select(x => x.Slug!)
-            .OrderBy(x => EF.Functions.Collate(x, "Latin1_General_100_BIN2"))
+            .OrderBy(x => x)
             .Skip(safeSkip)
             .Take(take)
             .ToListAsync(ct);

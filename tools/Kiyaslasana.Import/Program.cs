@@ -51,6 +51,7 @@ internal static class ImportProgram
         }
 
         await using var dbContext = CreateSqlServerContext(sqlServerConnection);
+        await dbContext.Database.MigrateAsync();
 
         if (truncate)
         {
@@ -73,6 +74,7 @@ internal static class ImportProgram
         var truncate = GetOptionalBool(options, "truncate", false);
 
         await using var dbContext = CreateSqlServerContext(sqlServerConnection);
+        await dbContext.Database.MigrateAsync();
         if (truncate)
         {
             await TruncateTelefonlarAsync(dbContext);
