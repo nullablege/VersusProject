@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
 using Kiyaslasana.DAL.Data;
+using Kiyaslasana.EL.Constants;
 using Kiyaslasana.EL.Entities;
 using Microsoft.EntityFrameworkCore;
 using MySqlConnector;
@@ -96,6 +97,7 @@ internal static class ImportProgram
         while (await reader.ReadAsync())
         {
             var phone = MapFromDataRecord(reader, propertyMap);
+            phone.Marka = NormalizeBrand(phone.Marka);
             var slug = NormalizeSlug(phone.Slug);
             if (slug.Length > 0)
             {
@@ -229,6 +231,7 @@ internal static class ImportProgram
             }
 
             var phone = MapFromJsonElement(element, propertyMap);
+            phone.Marka = NormalizeBrand(phone.Marka);
             var slug = NormalizeSlug(phone.Slug);
             if (slug.Length > 0)
             {
@@ -410,7 +413,29 @@ internal static class ImportProgram
 
     private static string NormalizeSlug(string? value)
     {
-        return (value ?? string.Empty).Trim().ToLowerInvariant();
+        var normalized = (value ?? string.Empty).Trim().ToLowerInvariant();
+        if (normalized.Length <= TelefonConstraints.SlugMaxLength)
+        {
+            return normalized;
+        }
+
+        return normalized[..TelefonConstraints.SlugMaxLength];
+    }
+
+    private static string? NormalizeBrand(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var normalized = value.Trim();
+        if (normalized.Length <= TelefonConstraints.MarkaMaxLength)
+        {
+            return normalized;
+        }
+
+        return normalized[..TelefonConstraints.MarkaMaxLength];
     }
 
     private static void PrintUsage()

@@ -265,7 +265,8 @@ namespace Kiyaslasana.DAL.Migrations
                         .HasColumnName("konumlandirma_gps");
 
                     b.Property<string>("Marka")
-                        .HasColumnType("nvarchar(450)")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
                         .HasColumnName("marka");
 
                     b.Property<string>("ModelAdi")
@@ -409,7 +410,8 @@ namespace Kiyaslasana.DAL.Migrations
                         .HasColumnName("sim_tr");
 
                     b.Property<string>("Slug")
-                        .HasColumnType("nvarchar(450)")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
                         .HasColumnName("slug");
 
                     b.Property<DateTimeOffset?>("SonGuncelleme")

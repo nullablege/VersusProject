@@ -11,9 +11,20 @@ namespace Kiyaslasana.DAL.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
+                name: "slug",
+                table: "telefonlar",
+                type: "nvarchar(200)",
+                maxLength: 200,
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
                 name: "marka",
                 table: "telefonlar",
-                type: "nvarchar(450)",
+                type: "nvarchar(100)",
+                maxLength: 100,
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "nvarchar(max)",
@@ -33,12 +44,23 @@ namespace Kiyaslasana.DAL.Migrations
                 table: "telefonlar");
 
             migrationBuilder.AlterColumn<string>(
+                name: "slug",
+                table: "telefonlar",
+                type: "nvarchar(450)",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(200)",
+                oldMaxLength: 200,
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
                 name: "marka",
                 table: "telefonlar",
                 type: "nvarchar(max)",
                 nullable: true,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(450)",
+                oldType: "nvarchar(100)",
+                oldMaxLength: 100,
                 oldNullable: true);
         }
     }

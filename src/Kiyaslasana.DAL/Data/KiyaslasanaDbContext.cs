@@ -1,3 +1,4 @@
+using Kiyaslasana.EL.Constants;
 using Kiyaslasana.EL.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -25,8 +26,9 @@ public sealed class KiyaslasanaDbContext : IdentityDbContext<ApplicationUser, Id
         {
             entity.ToTable(TelefonlarTableName);
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.Slug).HasMaxLength(TelefonConstraints.SlugMaxLength);
+            entity.Property(x => x.Marka).HasMaxLength(TelefonConstraints.MarkaMaxLength);
             entity.HasIndex(x => x.Slug).IsUnique();
-            entity.Property(x => x.Marka).HasMaxLength(450);
             entity.HasIndex(x => new { x.Marka, x.Slug });
 
             // Keep exact compatibility for non-standard numeric column names.
