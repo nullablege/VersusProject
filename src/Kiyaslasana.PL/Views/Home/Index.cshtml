@@ -1,0 +1,57 @@
+@model HomeViewModel
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="hero-title">Telefonunu <span>karsilastir</span> ve dogru secimi yap.</h1>
+            <p class="hero-subtitle">
+                En guncel modellere tek noktadan ulas, teknik detaylari incele, fiyat bilgisini gor.
+            </p>
+            <div class="hero-cta">
+                <a href="/telefonlar" class="btn btn-primary btn-lg">Tum Telefonlar</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">Son Eklenen <span>Telefonlar</span></h2>
+                <p class="section-subtitle">Veritabanindaki son kayitlar</p>
+            </div>
+            <a href="/telefonlar" class="section-link">Tumunu Gor</a>
+        </div>
+
+        @if (Model.LatestPhones.Count == 0)
+        {
+            <p>Listelenecek telefon bulunamadi.</p>
+        }
+        else
+        {
+            <div class="products-grid">
+                @foreach (var phone in Model.LatestPhones)
+                {
+                    var title = string.Join(' ', new[] { phone.Marka, phone.ModelAdi }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+                    <article class="product-card">
+                        <div class="product-image">
+                            <img src="@(string.IsNullOrWhiteSpace(phone.ResimUrl) ? "https://via.placeholder.com/200x300?text=Phone" : phone.ResimUrl)" alt="@title" />
+                        </div>
+                        <div class="product-info">
+                            <p class="product-brand">@phone.Marka</p>
+                            <h3 class="product-name">@phone.ModelAdi</h3>
+                            <div class="product-footer">
+                                <div class="product-price">@phone.Fiyat</div>
+                                @if (!string.IsNullOrWhiteSpace(phone.Slug))
+                                {
+                                    <a class="btn btn-secondary btn-sm" href="/telefon/@phone.Slug">Incele</a>
+                                }
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Karşılaştırma - Kıyaslasana</title>
+  <meta name="description" content="Telefonları yan yana karşılaştır, özelliklerini detaylı incele.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a href="#main-content" class="sr-only skip-to-content">Ana içeriğe atla</a>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-top">
+      <div class="container header-inner">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">K</div>
+          <span>Kıyaslasana</span>
+        </a>
+        
+        <nav class="main-nav" aria-label="Ana navigasyon">
+          <a href="phones.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="2" width="14" height="20" rx="2"/>
+              <line x1="12" y1="18" x2="12" y2="18"/>
+            </svg>
+            <span>Telefonlar</span>
+          </a>
+          <a href="#" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+            </svg>
+            <span>Tabletler</span>
+          </a>
+          <a href="#" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="15" rx="2"/>
+              <polyline points="17 2 12 7 7 2"/>
+            </svg>
+            <span>Fırsatlar</span>
+          </a>
+          <a href="compare.html" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+            <span>Karşılaştır</span>
+          </a>
+        </nav>
+        
+        <div class="header-actions">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="search" class="search-input" placeholder="Telefon, tablet ara..." aria-label="Ara">
+          </div>
+          
+          <button class="header-btn" aria-label="Bildirimler">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="badge-count">3</span>
+          </button>
+          
+          <button class="header-btn mobile-menu-btn" aria-label="Menü">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="main-content">
+    <!-- Page Header -->
+    <section class="hero" style="padding: var(--space-8) 0;">
+      <div class="container">
+        <h1 class="hero-title" style="font-size: var(--text-h2);">Telefon Karşılaştırma</h1>
+        <p class="hero-subtitle" style="margin-bottom: 0;">
+          Modelleri yan yana karşılaştır ve en doğru seçimi yap.
+        </p>
+      </div>
+    </section>
+
+    <!-- Compare Bar -->
+    <section class="section" style="padding-top: var(--space-6);">
+      <div class="container">
+        <div class="compare-bar">
+          <div class="compare-slots">
+            <div class="compare-slot filled">
+              <button class="compare-slot-remove" aria-label="Kaldır">×</button>
+              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='80' viewBox='0 0 60 80'%3E%3Crect fill='%23333' x='5' y='5' width='50' height='70' rx='5'/%3E%3C/svg%3E" alt="" class="compare-slot-image">
+              <span class="compare-slot-name">Galaxy S25 Ultra</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-tertiary);">Samsung</span>
+            </div>
+            
+            <div class="compare-slot filled">
+              <button class="compare-slot-remove" aria-label="Kaldır">×</button>
+              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='80' viewBox='0 0 60 80'%3E%3Crect fill='%231a1a2e' x='5' y='5' width='50' height='70' rx='5'/%3E%3C/svg%3E" alt="" class="compare-slot-image">
+              <span class="compare-slot-name">iPhone 16 Pro Max</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-tertiary);">Apple</span>
+            </div>
+            
+            <div class="compare-slot filled">
+              <button class="compare-slot-remove" aria-label="Kaldır">×</button>
+              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='80' viewBox='0 0 60 80'%3E%3Crect fill='%234A3FD8' x='5' y='5' width='50' height='70' rx='5'/%3E%3C/svg%3E" alt="" class="compare-slot-image">
+              <span class="compare-slot-name">15 Ultra</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-tertiary);">Xiaomi</span>
+            </div>
+            
+            <div class="compare-slot">
+              <div class="compare-slot-empty">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <line x1="12" y1="8" x2="12" y2="16"/>
+                  <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+                <p>Telefon ekle</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="compare-actions">
+            <button class="btn btn-secondary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              Tümünü Temizle
+            </button>
+            <a href="#" class="btn btn-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+              Karşılaştırmaya Başla
+            </a>
+          </div>
+        </div>
+
+        <!-- Compare Table - Temel Bilgiler -->
+        <div class="compare-section">
+          <div class="compare-section-header">Temel Bilgiler</div>
+          <div class="compare-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Özellik</th>
+                  <th>
+                    <div class="compare-phone-header">
+                      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='100' viewBox='0 0 80 100'%3E%3Crect fill='%23333' x='10' y='5' width='60' height='90' rx='8'/%3E%3C/svg%3E" alt="">
+                      <span class="phone-name">Galaxy S25 Ultra</span>
+                      <span class="phone-price">₺64.999</span>
+                    </div>
+                  </th>
+                  <th>
+                    <div class="compare-phone-header">
+                      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='100' viewBox='0 0 80 100'%3E%3Crect fill='%231a1a2e' x='10' y='5' width='60' height='90' rx='8'/%3E%3C/svg%3E" alt="">
+                      <span class="phone-name">iPhone 16 Pro Max</span>
+                      <span class="phone-price">₺89.999</span>
+                    </div>
+                  </th>
+                  <th>
+                    <div class="compare-phone-header">
+                      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='100' viewBox='0 0 80 100'%3E%3Crect fill='%234A3FD8' x='10' y='5' width='60' height='90' rx='8'/%3E%3C/svg%3E" alt="">
+                      <span class="phone-name">15 Ultra</span>
+                      <span class="phone-price">₺54.999</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Marka</td>
+                  <td>Samsung</td>
+                  <td>Apple</td>
+                  <td>Xiaomi</td>
+                </tr>
+                <tr>
+                  <td>Kıyaslasana Puanı</td>
+                  <td class="winner">9.8</td>
+                  <td>9.6</td>
+                  <td>9.5</td>
+                </tr>
+                <tr>
+                  <td>Ekran Boyutu</td>
+                  <td class="winner">6.9"</td>
+                  <td>6.7"</td>
+                  <td>6.73"</td>
+                </tr>
+                <tr>
+                  <td>Çözünürlük</td>
+                  <td>3120 x 1440</td>
+                  <td>2868 x 1320</td>
+                  <td class="winner">3200 x 1440</td>
+                </tr>
+                <tr>
+                  <td>İşlemci</td>
+                  <td>Snapdragon 8 Elite</td>
+                  <td class="winner">A18 Pro</td>
+                  <td>Snapdragon 8 Elite</td>
+                </tr>
+                <tr>
+                  <td>RAM</td>
+                  <td>12GB</td>
+                  <td class="winner">8GB</td>
+                  <td class="winner">16GB</td>
+                </tr>
+                <tr>
+                  <td>Depolama</td>
+                  <td>256GB</td>
+                  <td class="winner">256GB</td>
+                  <td class="winner">512GB</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Compare Table - Kamera -->
+        <div class="compare-section">
+          <div class="compare-section-header">Kamera</div>
+          <div class="compare-table">
+            <table>
+              <tbody>
+                <tr>
+                  <td>Ana Kamera</td>
+                  <td class="winner">200 MP</td>
+                  <td>48 MP</td>
+                  <td class="winner">200 MP</td>
+                </tr>
+                <tr>
+                  <td>Ultra Geniş Açı</td>
+                  <td class="winner">50 MP</td>
+                  <td>48 MP</td>
+                  <td class="winner">50 MP</td>
+                </tr>
+                <tr>
+                  <td>Telefoto</td>
+                  <td class="winner">10MP (3x) + 50MP (5x)</td>
+                  <td>12MP (5x)</td>
+                  <td class="winner">50MP (3.2x) + 50MP (5x)</td>
+                </tr>
+                <tr>
+                  <td>Video Kayıt</td>
+                  <td class="winner">8K@30fps</td>
+                  <td class="winner">4K@120fps</td>
+                  <td class="winner">8K@30fps</td>
+                </tr>
+                <tr>
+                  <td>Ön Kamera</td>
+                  <td>12 MP</td>
+                  <td class="winner">12 MP</td>
+                  <td class="winner">32 MP</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Compare Table - Batarya -->
+        <div class="compare-section">
+          <div class="compare-section-header">Batarya ve Şarj</div>
+          <div class="compare-table">
+            <table>
+              <tbody>
+                <tr>
+                  <td>Batarya Kapasitesi</td>
+                  <td>5000 mAh</td>
+                  <td class="winner">4685 mAh</td>
+                  <td class="winner">5400 mAh</td>
+                </tr>
+                <tr>
+                  <td>Hızlı Şarj</td>
+                  <td class="winner">45W</td>
+                  <td>27W</td>
+                  <td class="winner">90W</td>
+                </tr>
+                <tr>
+                  <td>Kablosuz Şarj</td>
+                  <td class="winner">15W</td>
+                  <td class="winner">25W</td>
+                  <td>80W</td>
+                </tr>
+                <tr>
+                  <td>Ters Şarj</td>
+                  <td>4.5W</td>
+                  <td>-</td>
+                  <td class="winner">10W</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Compare Table - Bağlantı -->
+        <div class="compare-section">
+          <div class="compare-section-header">Bağlantı</div>
+          <div class="compare-table">
+            <table>
+              <tbody>
+                <tr>
+                  <td>5G Desteği</td>
+                  <td class="winner">Evet</td>
+                  <td class="winner">Evet</td>
+                  <td class="winner">Evet</td>
+                </tr>
+                <tr>
+                  <td>Wi-Fi</td>
+                  <td class="winner">Wi-Fi 7</td>
+                  <td class="winner">Wi-Fi 7</td>
+                  <td class="winner">Wi-Fi 7</td>
+                </tr>
+                <tr>
+                  <td>Bluetooth</td>
+                  <td class="winner">5.4</td>
+                  <td class="winner">5.3</td>
+                  <td class="winner">5.4</td>
+                </tr>
+                <tr>
+                  <td>NFC</td>
+                  <td class="winner">Evet</td>
+                  <td class="winner">Evet</td>
+                  <td class="winner">Evet</td>
+                </tr>
+                <tr>
+                  <td>Su/D Toz Dayanımı</td>
+                  <td class="winner">IP68</td>
+                  <td class="winner">IP68</td>
+                  <td class="winner">IP68</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="footer-logo">
+            <div class="logo-icon">K</div>
+            <span>Kıyaslasana</span>
+          </a>
+          <p class="footer-description">Türkiye'nin en kapsamlı telefon karşılaştırma platformu.</p>
+        </div>
+        <div>
+          <h4 class="footer-title">Keşfet</h4>
+          <ul class="footer-links">
+            <li><a href="phones.html">Tüm Telefonlar</a></li>
+            <li><a href="#">Markalar</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Karşılaştır</h4>
+          <ul class="footer-links">
+            <li><a href="compare.html">Telefon Karşılaştır</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Hakkımızda</h4>
+          <ul class="footer-links">
+            <li><a href="#">İletişim</a></li>
+            <li><a href="#">Gizlilik</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copyright">© 2025 Kıyaslasana. Tüm hakları saklıdır.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+@model TelefonListViewModel
+
+<section class="hero" style="padding: var(--space-8) 0;">
+    <div class="container">
+        <h1 class="hero-title" style="font-size: var(--text-h2);">Tum Telefonlar</h1>
+        <p class="hero-subtitle" style="margin-bottom: 0;">Veritabanina eklenmis telefon modelleri.</p>
+    </div>
+</section>
+
+<section class="section" style="padding-top: var(--space-6);">
+    <div class="container">
+        @if (Model.Phones.Count == 0)
+        {
+            <p>Listelenecek telefon yok.</p>
+        }
+        else
+        {
+            <div class="products-grid">
+                @foreach (var phone in Model.Phones)
+                {
+                    var title = string.Join(' ', new[] { phone.Marka, phone.ModelAdi }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+                    <article class="product-card">
+                        <div class="product-image">
+                            <img src="@(string.IsNullOrWhiteSpace(phone.ResimUrl) ? "https://via.placeholder.com/200x300?text=Phone" : phone.ResimUrl)" alt="@title" />
+                        </div>
+                        <div class="product-info">
+                            <p class="product-brand">@phone.Marka</p>
+                            <h3 class="product-name">@phone.ModelAdi</h3>
+                            <div class="product-specs">
+                                @if (!string.IsNullOrWhiteSpace(phone.EkranBoyutu))
+                                {
+                                    <span class="product-spec">@phone.EkranBoyutu</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(phone.DahiliHafiza))
+                                {
+                                    <span class="product-spec">@phone.DahiliHafiza</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(phone.AnaKameraModulleri))
+                                {
+                                    <span class="product-spec">@phone.AnaKameraModulleri</span>
+                                }
+                            </div>
+                            <div class="product-footer">
+                                <div class="product-price">@phone.Fiyat</div>
+                                @if (!string.IsNullOrWhiteSpace(phone.Slug))
+                                {
+                                    <a class="btn btn-secondary btn-sm" href="/telefon/@phone.Slug">Detay</a>
+                                }
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>

@@ -1,0 +1,67 @@
+@model TelefonDetailViewModel
+@{
+    var phone = Model.Telefon;
+    var title = string.Join(' ', new[] { phone.Marka, phone.ModelAdi }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+}
+
+<section class="phone-hero">
+    <div class="container phone-hero-inner">
+        <div class="phone-hero-image">
+            <img src="@(string.IsNullOrWhiteSpace(phone.ResimUrl) ? "https://via.placeholder.com/300x400?text=Phone" : phone.ResimUrl)" alt="@title" />
+        </div>
+
+        <div class="phone-hero-info">
+            <div class="phone-hero-brand">
+                <span>@phone.Marka</span>
+            </div>
+            <h1 class="phone-hero-title">@title</h1>
+            <div class="phone-hero-meta">
+                @if (!string.IsNullOrWhiteSpace(phone.DahiliHafiza))
+                {
+                    <span class="phone-hero-badge">@phone.DahiliHafiza</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(phone.EkranBoyutu))
+                {
+                    <span class="phone-hero-badge">@phone.EkranBoyutu</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(phone.IsletimSistemi))
+                {
+                    <span class="phone-hero-badge">@phone.IsletimSistemi</span>
+                }
+            </div>
+            <div class="phone-hero-score">
+                <div class="score-box">
+                    <span class="score-box-value">@phone.Fiyat</span>
+                    <span class="score-box-label">Fiyat</span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(phone.Slug))
+                {
+                    <a href="/karsilastir/@phone.Slug-vs-@phone.Slug" class="btn btn-primary">Karsilastir</a>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-12);">
+    <section class="spec-section">
+        <h2 class="spec-section-title">Temel Ozellikler</h2>
+        <div class="spec-list">
+            <div class="spec-row"><span class="spec-row-label">Marka</span><span class="spec-row-value">@phone.Marka</span></div>
+            <div class="spec-row"><span class="spec-row-label">Model</span><span class="spec-row-value">@phone.ModelAdi</span></div>
+            <div class="spec-row"><span class="spec-row-label">Duyurulma Tarihi</span><span class="spec-row-value">@phone.DuyurulmaTarihi</span></div>
+            <div class="spec-row"><span class="spec-row-label">Piyasaya Cikis</span><span class="spec-row-value">@phone.PiyasayaCikisDurumu</span></div>
+            <div class="spec-row"><span class="spec-row-label">Isletim Sistemi</span><span class="spec-row-value">@phone.IsletimSistemi</span></div>
+            <div class="spec-row"><span class="spec-row-label">Yonga Seti</span><span class="spec-row-value">@phone.YongaSeti</span></div>
+            <div class="spec-row"><span class="spec-row-label">CPU</span><span class="spec-row-value">@phone.Cpu</span></div>
+            <div class="spec-row"><span class="spec-row-label">GPU</span><span class="spec-row-value">@phone.Gpu</span></div>
+            <div class="spec-row"><span class="spec-row-label">Batarya</span><span class="spec-row-value">@phone.BataryaTipi</span></div>
+            <div class="spec-row"><span class="spec-row-label">Sarj</span><span class="spec-row-value">@phone.SarjOzellikleri</span></div>
+        </div>
+    </section>
+</div>
+
+@section JsonLd {
+<script type="application/ld+json">@Html.Raw(Model.ProductJsonLd)</script>
+<script type="application/ld+json">@Html.Raw(Model.BreadcrumbJsonLd)</script>
+}
