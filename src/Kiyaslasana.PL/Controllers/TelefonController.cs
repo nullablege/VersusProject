@@ -1,4 +1,3 @@
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.EL.Entities;
@@ -11,11 +10,6 @@ namespace Kiyaslasana.PL.Controllers;
 
 public sealed class TelefonController : SeoControllerBase
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-    };
-
     private readonly ITelefonService _telefonService;
 
     public TelefonController(ITelefonService telefonService)
@@ -101,7 +95,7 @@ public sealed class TelefonController : SeoControllerBase
             }
         };
 
-        return JsonSerializer.Serialize(data, JsonOptions);
+        return JsonSerializer.Serialize(data);
     }
 
     private string BuildBreadcrumbJsonLd(Telefon phone, string slug)
@@ -138,6 +132,6 @@ public sealed class TelefonController : SeoControllerBase
             }
         };
 
-        return JsonSerializer.Serialize(data, JsonOptions);
+        return JsonSerializer.Serialize(data);
     }
 }

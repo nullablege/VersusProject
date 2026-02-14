@@ -32,6 +32,7 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
 - `/` home
 - `/telefonlar` phone list
 - `/telefon/{slug}` phone detail
+- `/karsilastir` compare builder entry
 - `/karsilastir/{slugs}` compare (`slug1-vs-slug2` up to 4 for authenticated users)
 - `/sitemap.xml` sitemap scaffold
 - `/system/info` lightweight info endpoint
@@ -41,6 +42,7 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
 - Static template assets are served from `src/Kiyaslasana.PL/wwwroot/versus` (lowercase).
 - Canonical URL is always emitted from layout.
 - Compare requests are rendered in normalized order without redirect.
+- Compare URL format is `slug1-vs-slug2[-vs-slug3-vs-slug4]`.
 - OutputCache is enabled for anonymous GET pages with route-based variation.
 - EF Core migrations are in `src/Kiyaslasana.DAL/Migrations`.
 

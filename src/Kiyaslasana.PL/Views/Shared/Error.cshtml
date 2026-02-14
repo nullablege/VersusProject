@@ -1,11 +1,14 @@
 @model Kiyaslasana.PL.Models.ErrorViewModel
 @{
     ViewData["Title"] = "Hata";
+    var statusCode = ViewData["StatusCode"] as int? ?? Model?.StatusCode;
+    var statusMessage = ViewData["StatusMessage"] as string ?? "Bir hata olustu.";
 }
 
 <section class="section">
     <div class="container">
-        <h1>Beklenmeyen bir hata olustu.</h1>
+        <h1>Hata @statusCode</h1>
+        <p>@statusMessage</p>
         @if (!string.IsNullOrWhiteSpace(Model?.RequestId))
         {
             <p>Istek No: <code>@Model.RequestId</code></p>

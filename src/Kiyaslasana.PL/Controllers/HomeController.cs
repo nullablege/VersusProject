@@ -1,6 +1,8 @@
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.PL.Infrastructure;
+using Kiyaslasana.PL.Models;
 using Kiyaslasana.PL.ViewModels;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 
@@ -36,8 +38,23 @@ public sealed class HomeController : SeoControllerBase
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     [HttpGet("/hata")]
-    public IActionResult Error()
+    [HttpGet("/hata/{statusCode:int?}")]
+    public IActionResult Error(int? statusCode = null)
     {
-        return View();
+        var resolvedStatusCode = statusCode ?? HttpContext.Response.StatusCode;
+
+        ViewData["StatusCode"] = resolvedStatusCode;
+        ViewData["StatusMessage"] = resolvedStatusCode switch
+        {
+            404 => "Istenen sayfa bulunamadi.",
+            500 => "Sunucuda beklenmeyen bir hata olustu.",
+            _ => "Bir hata olustu."
+        };
+
+        return View(new ErrorViewModel
+        {
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+            StatusCode = resolvedStatusCode
+        });
     }
 }

@@ -1,0 +1,53 @@
+@model KarsilastirBuilderViewModel
+
+<section class="hero" style="padding: var(--space-8) 0;">
+    <div class="container">
+        <h1 class="hero-title" style="font-size: var(--text-h2);">Karsilastirma Olustur</h1>
+        <p class="hero-subtitle" style="margin-bottom: 0;">
+            En az 2 slug girin. Bu hesap tipi icin maksimum @Model.MaxAllowed telefon secilebilir.
+        </p>
+    </div>
+</section>
+
+<section class="section" style="padding-top: var(--space-6);">
+    <div class="container">
+        <div class="compare-section" style="padding: var(--space-6);">
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="spec-section" style="padding-top: 0;">
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                </div>
+            }
+
+            <form method="post" action="/karsilastir" style="display: grid; gap: var(--space-4);">
+                @Html.AntiForgeryToken()
+
+                @for (var i = 0; i < Model.MaxAllowed; i++)
+                {
+                    <div>
+                        <label for="slug-@i">Telefon Slug @(@i + 1)</label>
+                        <input
+                            id="slug-@i"
+                            name="slugs"
+                            type="text"
+                            value="@Model.SlugInputs[i]"
+                            list="telefon-slugs"
+                            class="search-input"
+                            style="width: 100%; max-width: 520px;" />
+                    </div>
+                }
+
+                <datalist id="telefon-slugs">
+                    @foreach (var phone in Model.SuggestedPhones.Where(x => !string.IsNullOrWhiteSpace(x.Slug)))
+                    {
+                        <option value="@phone.Slug">@phone.Marka @phone.ModelAdi</option>
+                    }
+                </datalist>
+
+                <div>
+                    <button type="submit" class="btn btn-primary">Karsilastirmaya Git</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
