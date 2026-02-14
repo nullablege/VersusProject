@@ -64,6 +64,44 @@ public sealed class TelefonService : ITelefonService
         return new CompareParseResult(true, null, requested, canonical, maxAllowed);
     }
 
+    public async Task<CompareResolveResult> ResolveCompareAsync(IEnumerable<string> slugs, bool isAuthenticated, CancellationToken ct)
+    {
+        var maxAllowed = isAuthenticated ? 4 : 2;
+        var normalized = NormalizeDistinctSlugs(slugs);
+
+        if (normalized.Count < 2)
+        {
+            return new CompareResolveResult(false, "Karsilastirma icin en az 2 telefon gerekli.", [], [], maxAllowed);
+        }
+
+        if (normalized.Count > maxAllowed)
+        {
+            return new CompareResolveResult(false, $"Karsilastirma limiti asildi. En fazla {maxAllowed} telefon secilebilir.", [], [], maxAllowed);
+        }
+
+        var canonical = normalized
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToArray();
+
+        var items = await _telefonRepository.GetBySlugsAsync(canonical, ct);
+        var bySlug = items
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
+            .ToDictionary(x => x.Slug!, StringComparer.Ordinal);
+
+        var orderedPhones = new List<Telefon>(canonical.Length);
+        foreach (var slug in canonical)
+        {
+            if (!bySlug.TryGetValue(slug, out var phone))
+            {
+                return new CompareResolveResult(false, "Secilen sluglardan biri bulunamadi.", [], [], maxAllowed);
+            }
+
+            orderedPhones.Add(phone);
+        }
+
+        return new CompareResolveResult(true, null, canonical, orderedPhones, maxAllowed);
+    }
+
     public async Task<Telefon?> GetBySlugAsync(string slug, CancellationToken ct)
     {
         var normalizedSlug = NormalizeSlug(slug);
@@ -82,33 +120,27 @@ public sealed class TelefonService : ITelefonService
 
     public async Task<IReadOnlyList<Telefon>> GetBySlugsAsync(IReadOnlyList<string> slugs, CancellationToken ct)
     {
-        if (slugs.Count == 0)
+        var normalized = NormalizeDistinctSlugs(slugs);
+        if (normalized.Count == 0)
         {
             return [];
         }
 
-        var normalized = slugs
-            .Select(NormalizeSlug)
-            .Where(x => x.Length > 0)
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
+        var items = await _telefonRepository.GetBySlugsAsync(normalized, ct);
+        var bySlug = items
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
+            .ToDictionary(x => x.Slug!, StringComparer.Ordinal);
 
-        if (normalized.Length == 0)
-        {
-            return [];
-        }
-
-        var list = new List<Telefon>(normalized.Length);
+        var ordered = new List<Telefon>(normalized.Count);
         foreach (var slug in normalized)
         {
-            var item = await GetBySlugAsync(slug, ct);
-            if (item is not null)
+            if (bySlug.TryGetValue(slug, out var phone))
             {
-                list.Add(item);
+                ordered.Add(phone);
             }
         }
 
-        return list;
+        return ordered;
     }
 
     public async Task<IReadOnlyList<Telefon>> GetLatestAsync(int take, CancellationToken ct)
@@ -121,5 +153,27 @@ public sealed class TelefonService : ITelefonService
             cacheEntry.AbsoluteExpirationRelativeToNow = ListCacheDuration;
             return await _telefonRepository.GetLatestAsync(safeTake, ct);
         }) ?? [];
+    }
+
+    private List<string> NormalizeDistinctSlugs(IEnumerable<string> slugs)
+    {
+        var result = new List<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var slug in slugs)
+        {
+            var normalized = NormalizeSlug(slug);
+            if (normalized.Length == 0)
+            {
+                continue;
+            }
+
+            if (seen.Add(normalized))
+            {
+                result.Add(normalized);
+            }
+        }
+
+        return result;
     }
 }

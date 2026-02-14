@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.PL.Infrastructure;
 using Kiyaslasana.PL.ViewModels;
@@ -16,7 +17,7 @@ public sealed class KarsilastirController : SeoControllerBase
     }
 
     [HttpGet("/karsilastir")]
-    public async Task<IActionResult> Builder([FromQuery] string? first, CancellationToken ct)
+    public async Task<IActionResult> Index([FromQuery] string? first, CancellationToken ct)
     {
         var viewModel = await BuildBuilderViewModelAsync(
             isAuthenticated: User.Identity?.IsAuthenticated ?? false,
@@ -27,14 +28,15 @@ public sealed class KarsilastirController : SeoControllerBase
             title: "Telefon Karsilastirma Builder",
             description: "Karsilastirmak istedigin telefon sluglarini sec ve karsilastirma sayfasina git.",
             canonicalUrl: BuildAbsoluteUrl("/karsilastir"));
+        ViewData["Robots"] = "noindex,follow";
         ViewData["Nav"] = "karsilastir";
 
-        return View(viewModel);
+        return View("~/Views/Compare/Index.cshtml", viewModel);
     }
 
     [HttpPost("/karsilastir")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Builder([FromForm] string[] slugs, CancellationToken ct)
+    public async Task<IActionResult> Index([FromForm] string[] slugs, CancellationToken ct)
     {
         var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
         var maxAllowed = isAuthenticated ? 4 : 2;
@@ -73,8 +75,9 @@ public sealed class KarsilastirController : SeoControllerBase
                 title: "Telefon Karsilastirma Builder",
                 description: "Karsilastirmak istedigin telefon sluglarini sec ve karsilastirma sayfasina git.",
                 canonicalUrl: BuildAbsoluteUrl("/karsilastir"));
+            ViewData["Robots"] = "noindex,follow";
             ViewData["Nav"] = "karsilastir";
-            return View(viewModel);
+            return View("~/Views/Compare/Index.cshtml", viewModel);
         }
 
         var canonicalSlugs = normalized.OrderBy(x => x, StringComparer.Ordinal).ToArray();
@@ -82,42 +85,70 @@ public sealed class KarsilastirController : SeoControllerBase
         return Redirect(comparePath);
     }
 
-    [HttpGet("/karsilastir/{slugs}")]
-    [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneDay, VaryByRouteValueNames = ["slugs"])]
-    public async Task<IActionResult> Index(string slugs, CancellationToken ct)
+    [HttpGet("/karsilastir/{slug1:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug2:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}")]
+    [OutputCache(
+        PolicyName = OutputCachePolicyNames.AnonymousOneHour,
+        VaryByRouteValueNames = ["slug1", "slug2"])]
+    public async Task<IActionResult> CompareTwo(string slug1, string slug2, CancellationToken ct)
+    {
+        return await RenderCompareAsync([slug1, slug2], isSeoIndexable: true, ct);
+    }
+
+    [HttpGet("/karsilastir/{slug1:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug2:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug3:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}")]
+    public async Task<IActionResult> CompareThree(string slug1, string slug2, string slug3, CancellationToken ct)
+    {
+        return await RenderCompareAsync([slug1, slug2, slug3], isSeoIndexable: false, ct);
+    }
+
+    [HttpGet("/karsilastir/{slug1:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug2:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug3:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug4:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}")]
+    public async Task<IActionResult> CompareFour(string slug1, string slug2, string slug3, string slug4, CancellationToken ct)
+    {
+        return await RenderCompareAsync([slug1, slug2, slug3, slug4], isSeoIndexable: false, ct);
+    }
+
+    private async Task<IActionResult> RenderCompareAsync(IReadOnlyList<string> slugs, bool isSeoIndexable, CancellationToken ct)
     {
         var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
-        var parse = _telefonService.ParseCompareSlugs(slugs, isAuthenticated);
+        var resolve = await _telefonService.ResolveCompareAsync(slugs, isAuthenticated, ct);
 
-        if (!parse.IsValid)
+        if (!resolve.IsValid)
         {
-            return BadRequest(parse.ErrorMessage);
-        }
+            if (resolve.ErrorMessage?.Contains("limiti asildi", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return BadRequest(resolve.ErrorMessage);
+            }
 
-        var phones = await _telefonService.GetBySlugsAsync(parse.CanonicalSlugs, ct);
-        if (phones.Count != parse.CanonicalSlugs.Count || phones.Count < 2)
-        {
             return NotFound();
         }
 
-        var canonicalPath = "/karsilastir/" + string.Join("-vs-", parse.CanonicalSlugs);
+        var canonicalPath = "/karsilastir/" + string.Join("-vs-", resolve.CanonicalSlugs);
+        var indexable = isSeoIndexable && resolve.CanonicalSlugs.Count == 2;
+        var comparisonTitle = string.Join(" vs ", resolve.Phones.Select(BuildPhoneTitle));
+        var pageTitle = comparisonTitle.Length == 0 ? "Telefon Karsilastirma" : $"{comparisonTitle} Karsilastirma";
+        var metaDescription = indexable
+            ? $"{comparisonTitle} ozelliklerini yan yana karsilastir."
+            : "Coklu telefon karsilastirmasi sonucu.";
 
         SetSeo(
-            title: "Telefon Karsilastirma",
-            description: "Secilen telefon modellerini yan yana karsilastir.",
+            title: pageTitle,
+            description: metaDescription,
             canonicalUrl: BuildAbsoluteUrl(canonicalPath));
 
+        ViewData["Robots"] = indexable ? "index,follow" : "noindex,follow";
         ViewData["Nav"] = "karsilastir";
 
-        return View(new KarsilastirViewModel
+        return View("~/Views/Compare/Compare.cshtml", new CompareViewModel
         {
-            Phones = phones,
-            CanonicalComparePath = canonicalPath,
-            MaxAllowed = parse.MaxAllowed
+            Phones = resolve.Phones,
+            IsSeoIndexable = indexable,
+            CanonicalUrl = BuildAbsoluteUrl(canonicalPath),
+            PageTitle = pageTitle,
+            MetaDescription = metaDescription,
+            BreadcrumbJsonLd = indexable ? BuildBreadcrumbJsonLd(canonicalPath, resolve.Phones) : null
         });
     }
 
-    private async Task<KarsilastirBuilderViewModel> BuildBuilderViewModelAsync(
+    private async Task<CompareBuilderViewModel> BuildBuilderViewModelAsync(
         bool isAuthenticated,
         IReadOnlyList<string> requestedSlugs,
         CancellationToken ct)
@@ -131,11 +162,52 @@ public sealed class KarsilastirController : SeoControllerBase
         }
 
         var suggestions = await _telefonService.GetLatestAsync(200, ct);
-        return new KarsilastirBuilderViewModel
+        return new CompareBuilderViewModel
         {
             MaxAllowed = maxAllowed,
             SlugInputs = slots,
             SuggestedPhones = suggestions
         };
+    }
+
+    private static string BuildPhoneTitle(Kiyaslasana.EL.Entities.Telefon phone)
+    {
+        return string.Join(' ', new[] { phone.Marka, phone.ModelAdi }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+    }
+
+    private string BuildBreadcrumbJsonLd(string canonicalPath, IReadOnlyList<Kiyaslasana.EL.Entities.Telefon> phones)
+    {
+        var compareTitle = string.Join(" vs ", phones.Select(BuildPhoneTitle));
+        var data = new
+        {
+            @context = "https://schema.org",
+            @type = "BreadcrumbList",
+            itemListElement = new object[]
+            {
+                new
+                {
+                    @type = "ListItem",
+                    position = 1,
+                    name = "Ana Sayfa",
+                    item = BuildAbsoluteUrl("/")
+                },
+                new
+                {
+                    @type = "ListItem",
+                    position = 2,
+                    name = "Karsilastir",
+                    item = BuildAbsoluteUrl("/karsilastir")
+                },
+                new
+                {
+                    @type = "ListItem",
+                    position = 3,
+                    name = compareTitle,
+                    item = BuildAbsoluteUrl(canonicalPath)
+                }
+            }
+        };
+
+        return JsonSerializer.Serialize(data);
     }
 }

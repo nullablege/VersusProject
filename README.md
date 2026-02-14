@@ -34,7 +34,8 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
 - `/telefonlar/marka/{brandSlug}?page=1` brand landing list
 - `/telefon/{slug}` phone detail
 - `/karsilastir` compare builder entry
-- `/karsilastir/{slugs}` compare (`slug1-vs-slug2` up to 4 for authenticated users)
+- `/karsilastir/{slug1}-vs-{slug2}` SEO indexable compare page
+- `/karsilastir/{slug1}-vs-{slug2}-vs-{slug3}(-vs-{slug4})` functional compare page (`noindex,follow`)
 - `/sitemap.xml` sitemap index
 - `/sitemaps/static.xml` static url sitemap page
 - `/sitemaps/telefonlar-{page}.xml` paged phone sitemap pages
@@ -51,6 +52,7 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
   - `rel=prev` / `rel=next` link tags are emitted when applicable.
 - Compare requests are rendered in normalized order without redirect.
 - Compare URL format is `slug1-vs-slug2[-vs-slug3-vs-slug4]`.
+- Guest compare limit: 2 phones, authenticated compare limit: 4 phones (server-side enforced).
 - OutputCache is enabled for anonymous GET pages with route-based variation.
 - EF Core migrations are in `src/Kiyaslasana.DAL/Migrations`.
 - Import tool is available at `tools/Kiyaslasana.Import` (see `docs/IMPORT.md`).

@@ -64,6 +64,18 @@ public class TelefonServiceTests
         Assert.Contains("en az 2", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task ResolveCompareAsync_ReturnsCanonicalOrderedPhones()
+    {
+        var service = CreateService();
+
+        var result = await service.ResolveCompareAsync(["zeta", "alpha"], isAuthenticated: true, CancellationToken.None);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(new[] { "alpha", "zeta" }, result.CanonicalSlugs);
+        Assert.Equal(new[] { "alpha", "zeta" }, result.Phones.Select(x => x.Slug));
+    }
+
     private static TelefonService CreateService()
     {
         return new TelefonService(new StubTelefonRepository(), new MemoryCache(new MemoryCacheOptions()));
@@ -76,9 +88,9 @@ public class TelefonServiceTests
             return Task.FromResult<Telefon?>(new Telefon { Slug = slug, ModelAdi = slug });
         }
 
-        public Task<IReadOnlyList<Telefon>> GetBySlugsAsync(IReadOnlyList<string> slugs, CancellationToken ct)
+        public Task<List<Telefon>> GetBySlugsAsync(IEnumerable<string> slugs, CancellationToken ct)
         {
-            IReadOnlyList<Telefon> list = slugs.Select(x => new Telefon { Slug = x, ModelAdi = x }).ToArray();
+            var list = slugs.Select(x => new Telefon { Slug = x, ModelAdi = x }).ToList();
             return Task.FromResult(list);
         }
 

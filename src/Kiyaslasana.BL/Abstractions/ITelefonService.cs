@@ -9,6 +9,8 @@ public interface ITelefonService
 
     CompareParseResult ParseCompareSlugs(string? slugs, bool isAuthenticated);
 
+    Task<CompareResolveResult> ResolveCompareAsync(IEnumerable<string> slugs, bool isAuthenticated, CancellationToken ct);
+
     Task<Telefon?> GetBySlugAsync(string slug, CancellationToken ct);
 
     Task<IReadOnlyList<Telefon>> GetBySlugsAsync(IReadOnlyList<string> slugs, CancellationToken ct);

@@ -21,13 +21,8 @@ public sealed class EfTelefonRepository : ITelefonRepository
             .FirstOrDefaultAsync(x => x.Slug == slug, ct);
     }
 
-    public async Task<IReadOnlyList<Telefon>> GetBySlugsAsync(IReadOnlyList<string> slugs, CancellationToken ct)
+    public async Task<List<Telefon>> GetBySlugsAsync(IEnumerable<string> slugs, CancellationToken ct)
     {
-        if (slugs.Count == 0)
-        {
-            return [];
-        }
-
         var normalized = slugs
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Select(x => x.Trim().ToLowerInvariant())
@@ -39,25 +34,10 @@ public sealed class EfTelefonRepository : ITelefonRepository
             return [];
         }
 
-        var items = await _dbContext.Telefonlar
+        return await _dbContext.Telefonlar
             .AsNoTracking()
-            .Where(x => x.Slug != null && normalized.Contains(x.Slug))
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug) && normalized.Contains(x.Slug!))
             .ToListAsync(ct);
-
-        var bySlug = items
-            .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
-            .ToDictionary(x => x.Slug!, StringComparer.Ordinal);
-
-        var ordered = new List<Telefon>(normalized.Length);
-        foreach (var slug in normalized)
-        {
-            if (bySlug.TryGetValue(slug, out var telefon))
-            {
-                ordered.Add(telefon);
-            }
-        }
-
-        return ordered;
     }
 
     public async Task<IReadOnlyList<Telefon>> GetLatestAsync(int take, CancellationToken ct)

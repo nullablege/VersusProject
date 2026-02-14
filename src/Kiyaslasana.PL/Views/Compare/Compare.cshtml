@@ -1,0 +1,82 @@
+@model CompareViewModel
+
+<section class="hero" style="padding: var(--space-8) 0;">
+    <div class="container">
+        <h1 class="hero-title" style="font-size: var(--text-h2);">@Model.PageTitle</h1>
+        <p class="hero-subtitle" style="margin-bottom: 0;">
+            @Model.MetaDescription
+        </p>
+    </div>
+</section>
+
+<section class="section" style="padding-top: var(--space-6);">
+    <div class="container">
+        <div class="compare-section">
+            <div class="compare-section-header">Secilen Modeller (@Model.Phones.Count)</div>
+            <div class="compare-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ozellik</th>
+                            @foreach (var phone in Model.Phones)
+                            {
+                                <th>@phone.Marka @phone.ModelAdi</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Fiyat</td>
+                            @foreach (var phone in Model.Phones)
+                            {
+                                <td>@phone.Fiyat</td>
+                            }
+                        </tr>
+                        <tr>
+                            <td>Ekran</td>
+                            @foreach (var phone in Model.Phones)
+                            {
+                                <td>@phone.EkranBoyutu</td>
+                            }
+                        </tr>
+                        <tr>
+                            <td>Islemci</td>
+                            @foreach (var phone in Model.Phones)
+                            {
+                                <td>@phone.Cpu</td>
+                            }
+                        </tr>
+                        <tr>
+                            <td>GPU</td>
+                            @foreach (var phone in Model.Phones)
+                            {
+                                <td>@phone.Gpu</td>
+                            }
+                        </tr>
+                        <tr>
+                            <td>Batarya</td>
+                            @foreach (var phone in Model.Phones)
+                            {
+                                <td>@phone.BataryaTipi</td>
+                            }
+                        </tr>
+                        <tr>
+                            <td>Slug</td>
+                            @foreach (var phone in Model.Phones)
+                            {
+                                <td>@phone.Slug</td>
+                            }
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.BreadcrumbJsonLd))
+{
+    @section JsonLd {
+<script type="application/ld+json">@Html.Raw(Model.BreadcrumbJsonLd)</script>
+    }
+}
