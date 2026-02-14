@@ -2,21 +2,53 @@
 
 <section class="hero" style="padding: var(--space-8) 0;">
     <div class="container">
-        <h1 class="hero-title" style="font-size: var(--text-h2);">Tum Telefonlar</h1>
-        <p class="hero-subtitle" style="margin-bottom: 0;">Veritabanina eklenmis telefon modelleri.</p>
+        @if (string.IsNullOrWhiteSpace(Model.Brand))
+        {
+            <h1 class="hero-title" style="font-size: var(--text-h2);">Tum Telefonlar</h1>
+            <p class="hero-subtitle" style="margin-bottom: 0;">Veritabanina eklenmis tum telefon modelleri.</p>
+        }
+        else
+        {
+            <h1 class="hero-title" style="font-size: var(--text-h2);">@Model.Brand Telefonlari</h1>
+            <p class="hero-subtitle" style="margin-bottom: 0;">@Model.Brand markasina ait telefon modelleri.</p>
+        }
     </div>
 </section>
 
+@if (Model.Brands.Count > 0)
+{
+    <section class="brands-section" style="padding-top: var(--space-6);">
+        <div class="container">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Markalar</h2>
+                    <p class="section-subtitle">Marka landing sayfalarina hizli gecis</p>
+                </div>
+            </div>
+            <div class="brands-grid">
+                @foreach (var brand in Model.Brands)
+                {
+                    var brandInitial = string.IsNullOrWhiteSpace(brand.Name) ? "?" : brand.Name[..1].ToUpperInvariant();
+                    <a class="brand-item @(brand.IsActive ? "active" : string.Empty)" href="@brand.Url">
+                        <div class="brand-logo">@brandInitial</div>
+                        <span class="brand-name">@brand.Name</span>
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+}
+
 <section class="section" style="padding-top: var(--space-6);">
     <div class="container">
-        @if (Model.Phones.Count == 0)
+        @if (Model.Items.Count == 0)
         {
             <p>Listelenecek telefon yok.</p>
         }
         else
         {
             <div class="products-grid">
-                @foreach (var phone in Model.Phones)
+                @foreach (var phone in Model.Items)
                 {
                     var title = string.Join(' ', new[] { phone.Marka, phone.ModelAdi }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
                     <article class="product-card">
@@ -51,6 +83,64 @@
                     </article>
                 }
             </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                var startPage = Math.Max(1, Model.Page - 2);
+                var endPage = Math.Min(Model.TotalPages, Model.Page + 2);
+
+                <nav class="pagination" aria-label="Telefon listeleme sayfalari">
+                    @if (Model.PrevUrl is null)
+                    {
+                        <span class="page-btn" aria-disabled="true">Onceki</span>
+                    }
+                    else
+                    {
+                        <a class="page-btn" href="@Model.PrevUrl" rel="prev">Onceki</a>
+                    }
+
+                    @if (startPage > 1)
+                    {
+                        <a class="page-btn" href="@Model.BasePath">1</a>
+                        @if (startPage > 2)
+                        {
+                            <span class="page-btn" aria-hidden="true">...</span>
+                        }
+                    }
+
+                    @for (var pageNumber = startPage; pageNumber <= endPage; pageNumber++)
+                    {
+                        if (pageNumber == Model.Page)
+                        {
+                            <span class="page-btn active" aria-current="page">@pageNumber</span>
+                        }
+                        else
+                        {
+                            var pageUrl = pageNumber <= 1 ? Model.BasePath : $"{Model.BasePath}?page={pageNumber}";
+                            <a class="page-btn" href="@pageUrl">@pageNumber</a>
+                        }
+                    }
+
+                    @if (endPage < Model.TotalPages)
+                    {
+                        @if (endPage < Model.TotalPages - 1)
+                        {
+                            <span class="page-btn" aria-hidden="true">...</span>
+                        }
+                        var lastPageUrl = $"{Model.BasePath}?page={Model.TotalPages}";
+                        <a class="page-btn" href="@lastPageUrl">@Model.TotalPages</a>
+                    }
+
+                    @if (Model.NextUrl is null)
+                    {
+                        <span class="page-btn" aria-disabled="true">Sonraki</span>
+                    }
+                    else
+                    {
+                        <a class="page-btn" href="@Model.NextUrl" rel="next">Sonraki</a>
+                    }
+                </nav>
+            }
         }
     </div>
 </section>

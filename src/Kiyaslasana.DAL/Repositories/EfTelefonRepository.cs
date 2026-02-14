@@ -97,4 +97,59 @@ public sealed class EfTelefonRepository : ITelefonRepository
             .Take(take)
             .ToListAsync(ct);
     }
+
+    public async Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedAsync(int skip, int take, CancellationToken ct)
+    {
+        if (take <= 0)
+        {
+            return ([], 0);
+        }
+
+        var safeSkip = Math.Max(skip, 0);
+        var baseQuery = _dbContext.Telefonlar
+            .AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug));
+
+        var totalCount = await baseQuery.CountAsync(ct);
+        var items = await baseQuery
+            .OrderBy(x => x.Slug)
+            .Skip(safeSkip)
+            .Take(take)
+            .ToListAsync(ct);
+
+        return (items, totalCount);
+    }
+
+    public async Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedByBrandAsync(string brand, int skip, int take, CancellationToken ct)
+    {
+        if (take <= 0 || string.IsNullOrWhiteSpace(brand))
+        {
+            return ([], 0);
+        }
+
+        var safeSkip = Math.Max(skip, 0);
+        var baseQuery = _dbContext.Telefonlar
+            .AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug) && x.Marka == brand);
+
+        var totalCount = await baseQuery.CountAsync(ct);
+        var items = await baseQuery
+            .OrderBy(x => x.Slug)
+            .Skip(safeSkip)
+            .Take(take)
+            .ToListAsync(ct);
+
+        return (items, totalCount);
+    }
+
+    public async Task<IReadOnlyList<string>> GetDistinctBrandsAsync(CancellationToken ct)
+    {
+        return await _dbContext.Telefonlar
+            .AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.Marka))
+            .Select(x => x.Marka!.Trim())
+            .Distinct()
+            .OrderBy(x => x)
+            .ToListAsync(ct);
+    }
 }

@@ -1,39 +1,121 @@
 using System.Text.Json;
 using Kiyaslasana.BL.Abstractions;
+using Kiyaslasana.BL.Helpers;
 using Kiyaslasana.EL.Entities;
 using Kiyaslasana.PL.Infrastructure;
 using Kiyaslasana.PL.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Kiyaslasana.PL.Controllers;
 
 public sealed class TelefonController : SeoControllerBase
 {
-    private readonly ITelefonService _telefonService;
+    private const int ListingPageSize = 48;
+    private const string BrandSlugMapCacheKey = "telefon:list:brand-slug-map:v1";
+    private static readonly TimeSpan BrandSlugMapCacheDuration = TimeSpan.FromHours(24);
 
-    public TelefonController(ITelefonService telefonService)
+    private readonly ITelefonService _telefonService;
+    private readonly ITelefonRepository _telefonRepository;
+    private readonly IMemoryCache _memoryCache;
+
+    public TelefonController(
+        ITelefonService telefonService,
+        ITelefonRepository telefonRepository,
+        IMemoryCache memoryCache)
     {
         _telefonService = telefonService;
+        _telefonRepository = telefonRepository;
+        _memoryCache = memoryCache;
     }
 
     [HttpGet("/telefonlar")]
-    [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneHour)]
-    public async Task<IActionResult> Index(CancellationToken ct)
+    [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneHour, VaryByQueryKeys = ["page"])]
+    public async Task<IActionResult> Index([FromQuery] int page = 1, CancellationToken ct = default)
     {
-        var phones = await _telefonService.GetLatestAsync(48, ct);
+        var requestedPage = Math.Max(page, 1);
+        var initialSkip = (requestedPage - 1) * ListingPageSize;
 
-        SetSeo(
-            title: "Tum Telefonlar",
-            description: "Tum telefon modellerini tek listede gor ve karsilastirma icin secim yap.",
-            canonicalUrl: BuildAbsoluteUrl("/telefonlar"));
+        var (items, totalCount) = await _telefonRepository.GetPagedAsync(initialSkip, ListingPageSize, ct);
+        var paging = PagingHelper.Normalize(requestedPage, ListingPageSize, totalCount);
+
+        if (paging.Skip != initialSkip)
+        {
+            var clampedResult = await _telefonRepository.GetPagedAsync(paging.Skip, ListingPageSize, ct);
+            items = clampedResult.Items;
+            totalCount = clampedResult.TotalCount;
+        }
+
+        var brandMap = await GetBrandSlugMapAsync(ct);
+        var viewModel = BuildListViewModel(
+            items: items,
+            totalCount: totalCount,
+            page: paging.Page,
+            totalPages: paging.TotalPages,
+            pageSize: paging.PageSize,
+            brandMap: brandMap,
+            basePath: "/telefonlar",
+            selectedBrandSlug: null,
+            selectedBrand: null);
+
+        ApplyListingSeo(viewModel, "Tum Telefonlar", "Tum telefon modellerini sayfali listede gor ve karsilastirma icin secim yap.");
 
         ViewData["Nav"] = "telefonlar";
+        return View(viewModel);
+    }
 
-        return View(new TelefonListViewModel
+    [HttpGet("/telefonlar/marka/{brandSlug}")]
+    [OutputCache(
+        PolicyName = OutputCachePolicyNames.AnonymousOneHour,
+        VaryByRouteValueNames = ["brandSlug"],
+        VaryByQueryKeys = ["page"])]
+    public async Task<IActionResult> ByBrand(string brandSlug, [FromQuery] int page = 1, CancellationToken ct = default)
+    {
+        var normalizedBrandSlug = BrandSlugHelper.ToSlug(brandSlug);
+        if (normalizedBrandSlug.Length == 0)
         {
-            Phones = phones
-        });
+            return NotFound();
+        }
+
+        var brandMap = await GetBrandSlugMapAsync(ct);
+        if (!brandMap.TryGetValue(normalizedBrandSlug, out var brand))
+        {
+            return NotFound();
+        }
+
+        var requestedPage = Math.Max(page, 1);
+        var initialSkip = (requestedPage - 1) * ListingPageSize;
+
+        var (items, totalCount) = await _telefonRepository.GetPagedByBrandAsync(brand, initialSkip, ListingPageSize, ct);
+        var paging = PagingHelper.Normalize(requestedPage, ListingPageSize, totalCount);
+
+        if (paging.Skip != initialSkip)
+        {
+            var clampedResult = await _telefonRepository.GetPagedByBrandAsync(brand, paging.Skip, ListingPageSize, ct);
+            items = clampedResult.Items;
+            totalCount = clampedResult.TotalCount;
+        }
+
+        var basePath = $"/telefonlar/marka/{normalizedBrandSlug}";
+        var viewModel = BuildListViewModel(
+            items: items,
+            totalCount: totalCount,
+            page: paging.Page,
+            totalPages: paging.TotalPages,
+            pageSize: paging.PageSize,
+            brandMap: brandMap,
+            basePath: basePath,
+            selectedBrandSlug: normalizedBrandSlug,
+            selectedBrand: brand);
+
+        ApplyListingSeo(
+            viewModel,
+            $"{brand} Telefonlari",
+            $"{brand} marka telefon modellerini sayfali listede gor ve karsilastirma icin secim yap.");
+
+        ViewData["Nav"] = "telefonlar";
+        return View("Index", viewModel);
     }
 
     [HttpGet("/telefon/{slug}")]
@@ -133,5 +215,87 @@ public sealed class TelefonController : SeoControllerBase
         };
 
         return JsonSerializer.Serialize(data);
+    }
+
+    private async Task<IReadOnlyDictionary<string, string>> GetBrandSlugMapAsync(CancellationToken ct)
+    {
+        return await _memoryCache.GetOrCreateAsync(BrandSlugMapCacheKey, async cacheEntry =>
+        {
+            cacheEntry.AbsoluteExpirationRelativeToNow = BrandSlugMapCacheDuration;
+
+            var brands = await _telefonRepository.GetDistinctBrandsAsync(ct);
+            var map = new Dictionary<string, string>(StringComparer.Ordinal);
+
+            foreach (var brand in brands)
+            {
+                var slug = BrandSlugHelper.ToSlug(brand);
+                if (slug.Length == 0 || map.ContainsKey(slug))
+                {
+                    continue;
+                }
+
+                map[slug] = brand;
+            }
+
+            return (IReadOnlyDictionary<string, string>)map;
+        }) ?? new Dictionary<string, string>(StringComparer.Ordinal);
+    }
+
+    private TelefonListViewModel BuildListViewModel(
+        IReadOnlyList<Telefon> items,
+        int totalCount,
+        int page,
+        int totalPages,
+        int pageSize,
+        IReadOnlyDictionary<string, string> brandMap,
+        string basePath,
+        string? selectedBrandSlug,
+        string? selectedBrand)
+    {
+        var brands = brandMap
+            .OrderBy(x => x.Value, StringComparer.OrdinalIgnoreCase)
+            .Select(x => new BrandLinkViewModel
+            {
+                Name = x.Value,
+                Slug = x.Key,
+                Url = $"/telefonlar/marka/{x.Key}",
+                IsActive = selectedBrandSlug is not null && string.Equals(selectedBrandSlug, x.Key, StringComparison.Ordinal)
+            })
+            .ToArray();
+
+        var canonicalPath = BuildListingPath(basePath, page);
+        var prevPath = page > 1 ? BuildListingPath(basePath, page - 1) : null;
+        var nextPath = page < totalPages ? BuildListingPath(basePath, page + 1) : null;
+
+        return new TelefonListViewModel
+        {
+            Items = items,
+            Brands = brands,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalPages,
+            Brand = selectedBrand,
+            BrandSlug = selectedBrandSlug,
+            BasePath = basePath,
+            CanonicalUrl = BuildAbsoluteUrl(canonicalPath),
+            PrevUrl = prevPath,
+            NextUrl = nextPath,
+            RobotsMeta = page >= 2 ? "noindex,follow" : "index,follow"
+        };
+    }
+
+    private static string BuildListingPath(string basePath, int page)
+    {
+        return page <= 1 ? basePath : $"{basePath}?page={page}";
+    }
+
+    private void ApplyListingSeo(TelefonListViewModel viewModel, string title, string description)
+    {
+        SetSeo(title, description, viewModel.CanonicalUrl);
+
+        ViewData["Robots"] = viewModel.RobotsMeta;
+        ViewData["PrevUrl"] = viewModel.PrevUrl is null ? null : BuildAbsoluteUrl(viewModel.PrevUrl);
+        ViewData["NextUrl"] = viewModel.NextUrl is null ? null : BuildAbsoluteUrl(viewModel.NextUrl);
     }
 }

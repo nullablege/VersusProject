@@ -41,3 +41,7 @@ When `ASPNETCORE_ENVIRONMENT=Development`, app startup:
 - Seeds Identity roles: `Admin`, `Member`.
 
 If you prefer manual migrations only, remove the startup migration block in `src/Kiyaslasana.PL/Program.cs`.
+
+## Notes
+
+- The latest migrations include listing-focused index `ix_telefonlar_marka_slug` to speed up brand paging queries.

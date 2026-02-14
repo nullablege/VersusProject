@@ -98,5 +98,21 @@ public class TelefonServiceTests
             IReadOnlyList<string> list = Array.Empty<string>();
             return Task.FromResult(list);
         }
+
+        public Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedAsync(int skip, int take, CancellationToken ct)
+        {
+            return Task.FromResult(((IReadOnlyList<Telefon>)Array.Empty<Telefon>(), 0));
+        }
+
+        public Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedByBrandAsync(string brand, int skip, int take, CancellationToken ct)
+        {
+            return Task.FromResult(((IReadOnlyList<Telefon>)Array.Empty<Telefon>(), 0));
+        }
+
+        public Task<IReadOnlyList<string>> GetDistinctBrandsAsync(CancellationToken ct)
+        {
+            IReadOnlyList<string> list = Array.Empty<string>();
+            return Task.FromResult(list);
+        }
     }
 }

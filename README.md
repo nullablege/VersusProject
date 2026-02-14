@@ -30,7 +30,8 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
 ## Key Routes
 
 - `/` home
-- `/telefonlar` phone list
+- `/telefonlar?page=1` paged phone list (page size: 48)
+- `/telefonlar/marka/{brandSlug}?page=1` brand landing list
 - `/telefon/{slug}` phone detail
 - `/karsilastir` compare builder entry
 - `/karsilastir/{slugs}` compare (`slug1-vs-slug2` up to 4 for authenticated users)
@@ -44,6 +45,10 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
 
 - Static template assets are served from `src/Kiyaslasana.PL/wwwroot/versus` (lowercase).
 - Canonical URL is always emitted from layout.
+- Listing pagination SEO:
+  - `page=1` canonical stays queryless (`/telefonlar` or `/telefonlar/marka/{brandSlug}`)
+  - `page>=2` canonical includes `?page=N` and emits `robots=noindex,follow`
+  - `rel=prev` / `rel=next` link tags are emitted when applicable.
 - Compare requests are rendered in normalized order without redirect.
 - Compare URL format is `slug1-vs-slug2[-vs-slug3-vs-slug4]`.
 - OutputCache is enabled for anonymous GET pages with route-based variation.

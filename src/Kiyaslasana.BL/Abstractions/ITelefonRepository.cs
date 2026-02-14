@@ -13,4 +13,10 @@ public interface ITelefonRepository
     Task<int> CountAsync(CancellationToken ct);
 
     Task<IReadOnlyList<string>> GetSlugsPageAsync(int skip, int take, CancellationToken ct);
+
+    Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedAsync(int skip, int take, CancellationToken ct);
+
+    Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedByBrandAsync(string brand, int skip, int take, CancellationToken ct);
+
+    Task<IReadOnlyList<string>> GetDistinctBrandsAsync(CancellationToken ct);
 }

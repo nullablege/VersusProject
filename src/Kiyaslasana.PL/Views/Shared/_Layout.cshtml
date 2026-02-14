@@ -2,6 +2,9 @@
     var nav = (ViewData["Nav"] as string ?? string.Empty).ToLowerInvariant();
     var title = ViewData["Title"] as string ?? "Kiyaslasana";
     var description = ViewData["MetaDescription"] as string ?? "Telefon karsilastirma platformu.";
+    var robots = ViewData["Robots"] as string;
+    var prevUrl = ViewData["PrevUrl"] as string;
+    var nextUrl = ViewData["NextUrl"] as string;
 
     var canonical = ViewData["Canonical"] as string;
     if (string.IsNullOrWhiteSpace(canonical))
@@ -18,7 +21,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@title</title>
     <meta name="description" content="@description" />
+    @if (!string.IsNullOrWhiteSpace(robots))
+    {
+        <meta name="robots" content="@robots" />
+    }
     <link rel="canonical" href="@canonical" />
+    @if (!string.IsNullOrWhiteSpace(prevUrl))
+    {
+        <link rel="prev" href="@prevUrl" />
+    }
+    @if (!string.IsNullOrWhiteSpace(nextUrl))
+    {
+        <link rel="next" href="@nextUrl" />
+    }
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />

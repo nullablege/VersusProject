@@ -26,6 +26,8 @@ public sealed class KiyaslasanaDbContext : IdentityDbContext<ApplicationUser, Id
             entity.ToTable(TelefonlarTableName);
             entity.HasKey(x => x.Id);
             entity.HasIndex(x => x.Slug).IsUnique();
+            entity.Property(x => x.Marka).HasMaxLength(450);
+            entity.HasIndex(x => new { x.Marka, x.Slug });
 
             // Keep exact compatibility for non-standard numeric column names.
             entity.Property(x => x.Ses35MmJack).HasColumnName("ses_3_5mm_jack");
