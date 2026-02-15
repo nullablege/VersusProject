@@ -39,6 +39,26 @@
     </section>
 }
 
+@if (!string.IsNullOrWhiteSpace(Model.Brand) && Model.PopularComparisons.Count > 0)
+{
+    <section class="section" style="padding-top: var(--space-6);">
+        <div class="container">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">En Populer Karsilastirmalar</h2>
+                    <p class="section-subtitle">@Model.Brand modelleri icin onerilen karsilastirmalar</p>
+                </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
+                @foreach (var compareLink in Model.PopularComparisons)
+                {
+                    <a class="btn btn-secondary btn-sm" href="@compareLink.Url">@compareLink.Title</a>
+                }
+            </div>
+        </div>
+    </section>
+}
+
 <section class="section" style="padding-top: var(--space-6);">
     <div class="container">
         @if (Model.Items.Count == 0)

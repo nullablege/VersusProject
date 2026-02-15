@@ -62,6 +62,12 @@ public class TelefonSitemapQueryTests
             return Task.FromResult(((IReadOnlyList<Telefon>)[], 0));
         }
 
+        public Task<IReadOnlyList<Telefon>> GetLatestByBrandAsync(string brand, int take, CancellationToken ct)
+        {
+            IReadOnlyList<Telefon> list = [];
+            return Task.FromResult(list);
+        }
+
         public Task<IReadOnlyList<string>> GetDistinctBrandsAsync(CancellationToken ct)
         {
             IReadOnlyList<string> list = ["Apple", "Samsung"];

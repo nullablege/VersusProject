@@ -20,5 +20,7 @@ public interface ITelefonRepository
 
     Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedByBrandAsync(string brand, int skip, int take, CancellationToken ct);
 
+    Task<IReadOnlyList<Telefon>> GetLatestByBrandAsync(string brand, int take, CancellationToken ct);
+
     Task<IReadOnlyList<string>> GetDistinctBrandsAsync(CancellationToken ct);
 }

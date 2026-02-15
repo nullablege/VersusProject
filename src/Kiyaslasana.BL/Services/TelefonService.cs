@@ -11,6 +11,7 @@ public sealed class TelefonService : ITelefonService
 {
     private const string RelatedCandidatesCacheKey = "telefon:compare:related-candidates:v1";
     private const int RelatedCandidatesTake = 240;
+    private const string RelatedLinksCacheKeyPrefix = "telefon:compare:related-links:v1";
 
     private static readonly Regex CacheableSlugRegex = new(
         $"^[a-z0-9-]{{1,{TelefonConstraints.SlugMaxLength}}}$",
@@ -19,6 +20,7 @@ public sealed class TelefonService : ITelefonService
     private static readonly TimeSpan PhoneCacheDuration = TimeSpan.FromHours(6);
     private static readonly TimeSpan ListCacheDuration = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan RelatedCandidatesCacheDuration = TimeSpan.FromHours(1);
+    private static readonly TimeSpan RelatedLinksCacheDuration = TimeSpan.FromHours(1);
 
     private readonly ITelefonRepository _telefonRepository;
     private readonly IMemoryCache _memoryCache;
@@ -205,6 +207,13 @@ public sealed class TelefonService : ITelefonService
         var safePerSlug = Math.Clamp(perSlug, 1, 12);
         var safeTotalMax = Math.Clamp(totalMax, 1, 40);
         var currentSet = new HashSet<string>(normalizedCurrent, StringComparer.Ordinal);
+        var cacheKey = $"{RelatedLinksCacheKeyPrefix}:{safePerSlug}:{safeTotalMax}:{string.Join('|', normalizedCurrent)}";
+
+        if (_memoryCache.TryGetValue<IReadOnlyList<RelatedComparisonLink>>(cacheKey, out var cached)
+            && cached is not null)
+        {
+            return cached;
+        }
 
         var relatedCandidates = await GetRelatedCandidatesAsync(ct);
         if (relatedCandidates.Count == 0)
@@ -259,6 +268,12 @@ public sealed class TelefonService : ITelefonService
                 break;
             }
         }
+
+        SetCacheEntry(cacheKey, (IReadOnlyList<RelatedComparisonLink>)output, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = RelatedLinksCacheDuration,
+            Size = 3
+        });
 
         return output;
     }

@@ -14,7 +14,10 @@ public sealed class TelefonController : SeoControllerBase
 {
     private const int ListingPageSize = 48;
     private const string BrandSlugMapCacheKey = "telefon:list:brand-slug-map:v1";
+    private const string BrandPopularCompareCacheKeyPrefix = "telefon:list:brand-popular-compare:v1";
+    private const string DetailCompareCacheKeyPrefix = "telefon:detail:compare-links:v1";
     private static readonly TimeSpan BrandSlugMapCacheDuration = TimeSpan.FromHours(24);
+    private static readonly TimeSpan CompareLinksCacheDuration = TimeSpan.FromHours(1);
 
     private readonly ITelefonService _telefonService;
     private readonly ITelefonRepository _telefonRepository;
@@ -57,7 +60,8 @@ public sealed class TelefonController : SeoControllerBase
             brandMap: brandMap,
             basePath: "/telefonlar",
             selectedBrandSlug: null,
-            selectedBrand: null);
+            selectedBrand: null,
+            popularComparisons: []);
 
         ApplyListingSeo(viewModel, "Tum Telefonlar", "Tum telefon modellerini sayfali listede gor ve karsilastirma icin secim yap.");
 
@@ -98,6 +102,7 @@ public sealed class TelefonController : SeoControllerBase
         }
 
         var basePath = $"/telefonlar/marka/{normalizedBrandSlug}";
+        var popularComparisons = await GetBrandPopularComparisonsAsync(brand, normalizedBrandSlug, ct);
         var viewModel = BuildListViewModel(
             items: items,
             totalCount: totalCount,
@@ -107,7 +112,8 @@ public sealed class TelefonController : SeoControllerBase
             brandMap: brandMap,
             basePath: basePath,
             selectedBrandSlug: normalizedBrandSlug,
-            selectedBrand: brand);
+            selectedBrand: brand,
+            popularComparisons: popularComparisons);
 
         ApplyListingSeo(
             viewModel,
@@ -138,12 +144,14 @@ public sealed class TelefonController : SeoControllerBase
             canonicalUrl: BuildAbsoluteUrl($"/telefon/{normalizedSlug}"));
 
         ViewData["Nav"] = "telefonlar";
+        var compareSuggestions = await GetDetailCompareSuggestionsAsync(normalizedSlug, title, ct);
 
         return View(new TelefonDetailViewModel
         {
             Telefon = phone,
             ProductJsonLd = BuildProductJsonLd(phone, normalizedSlug),
-            BreadcrumbJsonLd = BuildBreadcrumbJsonLd(phone, normalizedSlug)
+            BreadcrumbJsonLd = BuildBreadcrumbJsonLd(phone, normalizedSlug),
+            CompareSuggestions = compareSuggestions
         });
     }
 
@@ -251,7 +259,8 @@ public sealed class TelefonController : SeoControllerBase
         IReadOnlyDictionary<string, string> brandMap,
         string basePath,
         string? selectedBrandSlug,
-        string? selectedBrand)
+        string? selectedBrand,
+        IReadOnlyList<CompareRelatedLinkViewModel> popularComparisons)
     {
         var brands = brandMap
             .OrderBy(x => x.Value, StringComparer.OrdinalIgnoreCase)
@@ -282,7 +291,8 @@ public sealed class TelefonController : SeoControllerBase
             CanonicalUrl = BuildAbsoluteUrl(canonicalPath),
             PrevUrl = prevPath,
             NextUrl = nextPath,
-            RobotsMeta = page >= 2 ? "noindex,follow" : "index,follow"
+            RobotsMeta = page >= 2 ? "noindex,follow" : "index,follow",
+            PopularComparisons = popularComparisons
         };
     }
 
@@ -298,5 +308,132 @@ public sealed class TelefonController : SeoControllerBase
         ViewData["Robots"] = viewModel.RobotsMeta;
         ViewData["PrevUrl"] = viewModel.PrevUrl is null ? null : BuildAbsoluteUrl(viewModel.PrevUrl);
         ViewData["NextUrl"] = viewModel.NextUrl is null ? null : BuildAbsoluteUrl(viewModel.NextUrl);
+    }
+
+    private async Task<IReadOnlyList<CompareRelatedLinkViewModel>> GetBrandPopularComparisonsAsync(
+        string brand,
+        string brandSlug,
+        CancellationToken ct)
+    {
+        var cacheKey = $"{BrandPopularCompareCacheKeyPrefix}:{brandSlug}";
+        if (_memoryCache.TryGetValue<IReadOnlyList<CompareRelatedLinkViewModel>>(cacheKey, out var cached)
+            && cached is not null)
+        {
+            return cached;
+        }
+
+        var latestBrandPhones = await _telefonRepository.GetLatestByBrandAsync(brand, take: 5, ct);
+        var links = BuildBrandPopularComparisons(latestBrandPhones, maxLinks: 10);
+
+        SetCacheEntry(cacheKey, links, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = CompareLinksCacheDuration,
+            Size = 3
+        });
+
+        return links;
+    }
+
+    private async Task<IReadOnlyList<CompareRelatedLinkViewModel>> GetDetailCompareSuggestionsAsync(
+        string slug,
+        string currentTitle,
+        CancellationToken ct)
+    {
+        var cacheKey = $"{DetailCompareCacheKeyPrefix}:{slug}";
+        if (_memoryCache.TryGetValue<IReadOnlyList<CompareRelatedLinkViewModel>>(cacheKey, out var cached)
+            && cached is not null)
+        {
+            return cached;
+        }
+
+        var related = await _telefonService.GetRelatedComparisonLinksAsync([slug], perSlug: 8, totalMax: 8, ct);
+        var links = related
+            .Select(x => new CompareRelatedLinkViewModel
+            {
+                Url = x.UrlPath,
+                Title = $"{currentTitle} vs {(!string.IsNullOrWhiteSpace(x.OtherTitle) ? x.OtherTitle : x.OtherSlug)}",
+                ImageUrl = x.OtherImageUrl
+            })
+            .ToArray();
+
+        SetCacheEntry(cacheKey, links, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = CompareLinksCacheDuration,
+            Size = 2
+        });
+
+        return links;
+    }
+
+    private static IReadOnlyList<CompareRelatedLinkViewModel> BuildBrandPopularComparisons(
+        IReadOnlyList<Telefon> phones,
+        int maxLinks)
+    {
+        if (phones.Count < 2 || maxLinks <= 0)
+        {
+            return [];
+        }
+
+        var safePhones = phones
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
+            .Take(5)
+            .ToArray();
+
+        if (safePhones.Length < 2)
+        {
+            return [];
+        }
+
+        var results = new List<CompareRelatedLinkViewModel>(Math.Min(maxLinks, 10));
+        var pairSet = new HashSet<string>(StringComparer.Ordinal);
+
+        for (var i = 0; i < safePhones.Length && results.Count < maxLinks; i++)
+        {
+            for (var j = i + 1; j < safePhones.Length && results.Count < maxLinks; j++)
+            {
+                var leftSlug = safePhones[i].Slug!;
+                var rightSlug = safePhones[j].Slug!;
+
+                var canonicalLeft = string.Compare(leftSlug, rightSlug, StringComparison.Ordinal) <= 0 ? leftSlug : rightSlug;
+                var canonicalRight = canonicalLeft == leftSlug ? rightSlug : leftSlug;
+                var pairKey = $"{canonicalLeft}|{canonicalRight}";
+                if (!pairSet.Add(pairKey))
+                {
+                    continue;
+                }
+
+                var leftTitle = canonicalLeft == leftSlug
+                    ? BuildPhoneTitle(safePhones[i])
+                    : BuildPhoneTitle(safePhones[j]);
+                var rightTitle = canonicalRight == rightSlug
+                    ? BuildPhoneTitle(safePhones[j])
+                    : BuildPhoneTitle(safePhones[i]);
+
+                results.Add(new CompareRelatedLinkViewModel
+                {
+                    Url = $"/karsilastir/{canonicalLeft}-vs-{canonicalRight}",
+                    Title = $"{leftTitle} vs {rightTitle}",
+                    ImageUrl = null
+                });
+            }
+        }
+
+        return results;
+    }
+
+    private void SetCacheEntry<T>(string key, T value, MemoryCacheEntryOptions options)
+    {
+        try
+        {
+            _memoryCache.Set(key, value, options);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("size", StringComparison.OrdinalIgnoreCase))
+        {
+            _memoryCache.Set(key, value, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = options.AbsoluteExpirationRelativeToNow,
+                SlidingExpiration = options.SlidingExpiration
+            });
+        }
     }
 }

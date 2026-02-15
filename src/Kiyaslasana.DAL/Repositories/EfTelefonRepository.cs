@@ -142,6 +142,24 @@ public sealed class EfTelefonRepository : ITelefonRepository
         return (items, totalCount);
     }
 
+    public async Task<IReadOnlyList<Telefon>> GetLatestByBrandAsync(string brand, int take, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(brand) || take <= 0)
+        {
+            return [];
+        }
+
+        var safeTake = Math.Clamp(take, 1, 50);
+
+        return await _dbContext.Telefonlar
+            .AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug) && x.Marka == brand)
+            .OrderByDescending(x => x.KayitTarihi)
+            .ThenByDescending(x => x.Id)
+            .Take(safeTake)
+            .ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<string>> GetDistinctBrandsAsync(CancellationToken ct)
     {
         return await _dbContext.Telefonlar

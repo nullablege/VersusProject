@@ -155,6 +155,12 @@ public class TelefonServiceTests
             return Task.FromResult(((IReadOnlyList<Telefon>)Array.Empty<Telefon>(), 0));
         }
 
+        public Task<IReadOnlyList<Telefon>> GetLatestByBrandAsync(string brand, int take, CancellationToken ct)
+        {
+            IReadOnlyList<Telefon> list = Array.Empty<Telefon>();
+            return Task.FromResult(list);
+        }
+
         public Task<IReadOnlyList<string>> GetDistinctBrandsAsync(CancellationToken ct)
         {
             IReadOnlyList<string> list = Array.Empty<string>();

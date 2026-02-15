@@ -59,6 +59,24 @@
             <div class="spec-row"><span class="spec-row-label">Sarj</span><span class="spec-row-value">@phone.SarjOzellikleri</span></div>
         </div>
     </section>
+
+    @if (Model.CompareSuggestions.Count > 0)
+    {
+        <section class="section" style="padding-top: var(--space-6);">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Bu Telefonu Sunlarla Karsilastir</h2>
+                    <p class="section-subtitle">Benzer modellerle hizli karsilastirma baglantilari</p>
+                </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
+                @foreach (var compareLink in Model.CompareSuggestions)
+                {
+                    <a class="btn btn-secondary btn-sm" href="@compareLink.Url">@compareLink.Title</a>
+                }
+            </div>
+        </section>
+    }
 </div>
 
 @section JsonLd {
