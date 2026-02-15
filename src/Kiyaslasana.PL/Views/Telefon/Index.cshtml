@@ -7,6 +7,13 @@
     </div>
 </section>
 
+@if (ViewData["FilterItemListJsonLd"] is string filterItemListJsonLd && !string.IsNullOrWhiteSpace(filterItemListJsonLd))
+{
+    @section JsonLd {
+<script type="application/ld+json">@Html.Raw(filterItemListJsonLd)</script>
+    }
+}
+
 @if (Model.Brands.Count > 0)
 {
     <section class="brands-section" style="padding-top: var(--space-6);">

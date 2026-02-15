@@ -170,6 +170,7 @@ public sealed class TelefonController : SeoControllerBase
 
         ApplyListingSeo(viewModel, filter.Title, filter.MetaDescription);
         ViewData["Nav"] = "telefonlar";
+        ViewData["FilterItemListJsonLd"] = BuildFilterItemListJsonLd(items);
 
         return View("Index", viewModel);
     }
@@ -270,6 +271,34 @@ public sealed class TelefonController : SeoControllerBase
                     item = BuildAbsoluteUrl($"/telefon/{slug}")
                 }
             }
+        };
+
+        return JsonSerializer.Serialize(data);
+    }
+
+    private string? BuildFilterItemListJsonLd(IReadOnlyList<Telefon> items)
+    {
+        var elements = items
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
+            .Select((phone, index) => new Dictionary<string, object?>
+            {
+                ["@type"] = "Product",
+                ["name"] = BuildPhoneTitle(phone),
+                ["url"] = BuildAbsoluteUrl($"/telefon/{phone.Slug}"),
+                ["position"] = index + 1
+            })
+            .ToArray();
+
+        if (elements.Length == 0)
+        {
+            return null;
+        }
+
+        var data = new Dictionary<string, object?>
+        {
+            ["@context"] = "https://schema.org",
+            ["@type"] = "ItemList",
+            ["itemListElement"] = elements
         };
 
         return JsonSerializer.Serialize(data);

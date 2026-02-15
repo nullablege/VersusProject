@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Text.Json;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.BL.Contracts;
 using Kiyaslasana.EL.Entities;
@@ -61,6 +62,28 @@ public class TelefonFilterControllerTests
 
         Assert.Equal("https://kiyaslasana.com/telefonlar/5g-telefonlar", page1Controller.ViewData["Canonical"]);
         Assert.Equal("https://kiyaslasana.com/telefonlar/5g-telefonlar?page=2", page2Controller.ViewData["Canonical"]);
+    }
+
+    [Fact]
+    public async Task ByFilter_SetsValidItemListJsonLd()
+    {
+        var controller = CreateController();
+        var result = await controller.ByFilter("5g-telefonlar", page: 1, CancellationToken.None);
+
+        Assert.IsType<ViewResult>(result);
+        var jsonLd = Assert.IsType<string>(controller.ViewData["FilterItemListJsonLd"]);
+
+        using var doc = JsonDocument.Parse(jsonLd);
+        Assert.Equal("https://schema.org", doc.RootElement.GetProperty("@context").GetString());
+        Assert.Equal("ItemList", doc.RootElement.GetProperty("@type").GetString());
+
+        var items = doc.RootElement.GetProperty("itemListElement");
+        Assert.True(items.GetArrayLength() > 0);
+
+        var first = items[0];
+        Assert.Equal("Product", first.GetProperty("@type").GetString());
+        Assert.Equal(1, first.GetProperty("position").GetInt32());
+        Assert.False(string.IsNullOrWhiteSpace(first.GetProperty("url").GetString()));
     }
 
     private static TelefonController CreateController()
