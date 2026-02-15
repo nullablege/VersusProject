@@ -3,7 +3,6 @@ using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.PL.Infrastructure;
 using Kiyaslasana.PL.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OutputCaching;
 
 namespace Kiyaslasana.PL.Controllers;
 
@@ -86,9 +85,6 @@ public sealed class KarsilastirController : SeoControllerBase
     }
 
     [HttpGet("/karsilastir/{slug1:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug2:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}")]
-    [OutputCache(
-        PolicyName = OutputCachePolicyNames.AnonymousOneHour,
-        VaryByRouteValueNames = ["slug1", "slug2"])]
     public async Task<IActionResult> CompareTwo(string slug1, string slug2, CancellationToken ct)
     {
         return await RenderCompareAsync([slug1, slug2], isSeoIndexable: true, ct);

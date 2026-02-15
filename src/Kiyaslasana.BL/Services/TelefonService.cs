@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.BL.Contracts;
 using Kiyaslasana.EL.Entities;
@@ -7,6 +8,10 @@ namespace Kiyaslasana.BL.Services;
 
 public sealed class TelefonService : ITelefonService
 {
+    private static readonly Regex CacheableSlugRegex = new(
+        "^[a-z0-9-]{1,120}$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     private static readonly TimeSpan PhoneCacheDuration = TimeSpan.FromHours(6);
     private static readonly TimeSpan ListCacheDuration = TimeSpan.FromMinutes(15);
 
@@ -105,17 +110,32 @@ public sealed class TelefonService : ITelefonService
     public async Task<Telefon?> GetBySlugAsync(string slug, CancellationToken ct)
     {
         var normalizedSlug = NormalizeSlug(slug);
-        if (normalizedSlug.Length == 0)
+        if (!IsCacheableSlug(normalizedSlug))
         {
+            // Reject invalid/high-cardinality keys early to avoid cache abuse.
             return null;
         }
 
         var cacheKey = $"telefon:slug:{normalizedSlug}";
-        return await _memoryCache.GetOrCreateAsync(cacheKey, async cacheEntry =>
+        if (_memoryCache.TryGetValue<Telefon>(cacheKey, out var cachedPhone))
         {
-            cacheEntry.AbsoluteExpirationRelativeToNow = PhoneCacheDuration;
-            return await _telefonRepository.GetBySlugAsync(normalizedSlug, ct);
+            return cachedPhone;
+        }
+
+        var phone = await _telefonRepository.GetBySlugAsync(normalizedSlug, ct);
+        if (phone is null)
+        {
+            // Do not cache misses to avoid unbounded negative-cache entries.
+            return null;
+        }
+
+        _memoryCache.Set(cacheKey, phone, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = PhoneCacheDuration,
+            Size = 1
         });
+
+        return phone;
     }
 
     public async Task<IReadOnlyList<Telefon>> GetBySlugsAsync(IReadOnlyList<string> slugs, CancellationToken ct)
@@ -148,11 +168,21 @@ public sealed class TelefonService : ITelefonService
         var safeTake = Math.Clamp(take, 1, 50);
         var cacheKey = $"telefon:latest:{safeTake}";
 
-        return await _memoryCache.GetOrCreateAsync(cacheKey, async cacheEntry =>
+        if (_memoryCache.TryGetValue<IReadOnlyList<Telefon>>(cacheKey, out var cachedList) && cachedList is not null)
         {
-            cacheEntry.AbsoluteExpirationRelativeToNow = ListCacheDuration;
-            return await _telefonRepository.GetLatestAsync(safeTake, ct);
-        }) ?? [];
+            return cachedList;
+        }
+
+        var latest = await _telefonRepository.GetLatestAsync(safeTake, ct);
+        var value = latest ?? [];
+
+        _memoryCache.Set(cacheKey, value, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = ListCacheDuration,
+            Size = 1
+        });
+
+        return value;
     }
 
     private List<string> NormalizeDistinctSlugs(IEnumerable<string> slugs)
@@ -175,5 +205,10 @@ public sealed class TelefonService : ITelefonService
         }
 
         return result;
+    }
+
+    private static bool IsCacheableSlug(string slug)
+    {
+        return CacheableSlugRegex.IsMatch(slug);
     }
 }

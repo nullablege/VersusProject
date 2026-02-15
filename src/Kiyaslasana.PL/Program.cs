@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using Kiyaslasana.BL;
 using Kiyaslasana.DAL;
 using Kiyaslasana.DAL.Data;
@@ -9,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Net.Http.Headers;
+using ForwardedIPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,11 +39,39 @@ builder.Services.AddResponseCompression(options =>
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
+    // Security: never trust client-controlled host forwarding headers.
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
-        | ForwardedHeaders.XForwardedProto
-        | ForwardedHeaders.XForwardedHost;
+        | ForwardedHeaders.XForwardedProto;
+
+    if (builder.Environment.IsDevelopment())
+    {
+        // Development convenience for local reverse proxies/tunnels.
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+        return;
+    }
+
+    // Production: trust only explicitly configured reverse proxy hops.
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
+
+    var trustedProxies = builder.Configuration.GetSection("ReverseProxy:TrustedProxies").Get<string[]>() ?? [];
+    foreach (var trustedProxy in trustedProxies)
+    {
+        if (IPAddress.TryParse(trustedProxy, out var proxyAddress))
+        {
+            options.KnownProxies.Add(proxyAddress);
+        }
+    }
+
+    var trustedNetworks = builder.Configuration.GetSection("ReverseProxy:TrustedNetworks").Get<string[]>() ?? [];
+    foreach (var trustedNetwork in trustedNetworks)
+    {
+        if (TryParseCidr(trustedNetwork, out var network))
+        {
+            options.KnownNetworks.Add(network);
+        }
+    }
 });
 
 builder.Services.AddOutputCache(options =>
@@ -137,4 +168,36 @@ app.Run();
 
 public partial class Program
 {
+    private static bool TryParseCidr(string cidr, out ForwardedIPNetwork network)
+    {
+        network = null!;
+
+        if (string.IsNullOrWhiteSpace(cidr))
+        {
+            return false;
+        }
+
+        var parts = cidr.Split('/', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 2 || !IPAddress.TryParse(parts[0], out var baseAddress))
+        {
+            return false;
+        }
+
+        if (!int.TryParse(parts[1], out var prefixLength))
+        {
+            return false;
+        }
+
+        var maxPrefix = baseAddress.AddressFamily == AddressFamily.InterNetwork ? 32 :
+            baseAddress.AddressFamily == AddressFamily.InterNetworkV6 ? 128 :
+            -1;
+
+        if (maxPrefix < 0 || prefixLength < 0 || prefixLength > maxPrefix)
+        {
+            return false;
+        }
+
+        network = new ForwardedIPNetwork(baseAddress, prefixLength);
+        return true;
+    }
 }

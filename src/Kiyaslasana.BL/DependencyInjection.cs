@@ -8,7 +8,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddBusinessLayer(this IServiceCollection services)
     {
-        services.AddMemoryCache();
+        services.AddMemoryCache(options =>
+        {
+            // Hard limit to reduce unbounded growth from high-cardinality cache keys.
+            options.SizeLimit = 5000;
+        });
         services.AddScoped<ITelefonService, TelefonService>();
         services.AddScoped<ITelefonSitemapQuery, TelefonSitemapQuery>();
         services.AddSingleton<IAppInfoProvider, AppInfoProvider>();

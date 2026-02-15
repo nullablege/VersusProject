@@ -118,7 +118,7 @@ public sealed class TelefonController : SeoControllerBase
         return View("Index", viewModel);
     }
 
-    [HttpGet("/telefon/{slug}")]
+    [HttpGet("/telefon/{slug:regex(^[a-z0-9-]+$):minlength(1):maxlength(120)}")]
     [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneDay, VaryByRouteValueNames = ["slug"])]
     public async Task<IActionResult> Detail(string slug, CancellationToken ct)
     {
@@ -222,6 +222,7 @@ public sealed class TelefonController : SeoControllerBase
         return await _memoryCache.GetOrCreateAsync(BrandSlugMapCacheKey, async cacheEntry =>
         {
             cacheEntry.AbsoluteExpirationRelativeToNow = BrandSlugMapCacheDuration;
+            cacheEntry.Size = 1;
 
             var brands = await _telefonRepository.GetDistinctBrandsAsync(ct);
             var map = new Dictionary<string, string>(StringComparer.Ordinal);
