@@ -207,7 +207,11 @@ public sealed class TelefonService : ITelefonService
         var safePerSlug = Math.Clamp(perSlug, 1, 12);
         var safeTotalMax = Math.Clamp(totalMax, 1, 40);
         var currentSet = new HashSet<string>(normalizedCurrent, StringComparer.Ordinal);
-        var cacheKey = $"{RelatedLinksCacheKeyPrefix}:{safePerSlug}:{safeTotalMax}:{string.Join('|', normalizedCurrent)}";
+        // Deterministic ordering prevents duplicate cache entries for the same slug set in different input orders.
+        var orderedForCacheKey = normalizedCurrent
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToArray();
+        var cacheKey = $"{RelatedLinksCacheKeyPrefix}:{safePerSlug}:{safeTotalMax}:{string.Join('|', orderedForCacheKey)}";
 
         if (_memoryCache.TryGetValue<IReadOnlyList<RelatedComparisonLink>>(cacheKey, out var cached)
             && cached is not null)

@@ -17,7 +17,8 @@ public sealed class TelefonController : SeoControllerBase
     private const string BrandPopularCompareCacheKeyPrefix = "telefon:list:brand-popular-compare:v1";
     private const string DetailCompareCacheKeyPrefix = "telefon:detail:compare-links:v1";
     private static readonly TimeSpan BrandSlugMapCacheDuration = TimeSpan.FromHours(24);
-    private static readonly TimeSpan CompareLinksCacheDuration = TimeSpan.FromHours(1);
+    private static readonly TimeSpan BrandPopularCompareCacheDuration = TimeSpan.FromMinutes(20);
+    private static readonly TimeSpan DetailCompareCacheDuration = TimeSpan.FromHours(1);
 
     private readonly ITelefonService _telefonService;
     private readonly ITelefonRepository _telefonRepository;
@@ -327,7 +328,7 @@ public sealed class TelefonController : SeoControllerBase
 
         SetCacheEntry(cacheKey, links, new MemoryCacheEntryOptions
         {
-            AbsoluteExpirationRelativeToNow = CompareLinksCacheDuration,
+            AbsoluteExpirationRelativeToNow = BrandPopularCompareCacheDuration,
             Size = 3
         });
 
@@ -358,7 +359,7 @@ public sealed class TelefonController : SeoControllerBase
 
         SetCacheEntry(cacheKey, links, new MemoryCacheEntryOptions
         {
-            AbsoluteExpirationRelativeToNow = CompareLinksCacheDuration,
+            AbsoluteExpirationRelativeToNow = DetailCompareCacheDuration,
             Size = 2
         });
 
