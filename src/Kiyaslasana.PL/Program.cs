@@ -17,6 +17,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+builder.Services.Configure<RouteOptions>(options =>
+{
+    options.ConstraintMap["telefonslug"] = typeof(TelefonSlugRouteConstraint);
+});
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddFluentValidationAutoValidation();
 

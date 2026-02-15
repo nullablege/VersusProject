@@ -118,7 +118,7 @@ public sealed class TelefonController : SeoControllerBase
         return View("Index", viewModel);
     }
 
-    [HttpGet("/telefon/{slug:regex(^[a-z0-9-]+$):minlength(1):maxlength(120)}")]
+    [HttpGet("/telefon/{slug:telefonslug}")]
     [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneDay, VaryByRouteValueNames = ["slug"])]
     public async Task<IActionResult> Detail(string slug, CancellationToken ct)
     {

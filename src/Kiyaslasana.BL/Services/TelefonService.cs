@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.BL.Contracts;
+using Kiyaslasana.EL.Constants;
 using Kiyaslasana.EL.Entities;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -9,7 +10,7 @@ namespace Kiyaslasana.BL.Services;
 public sealed class TelefonService : ITelefonService
 {
     private static readonly Regex CacheableSlugRegex = new(
-        "^[a-z0-9-]{1,120}$",
+        $"^[a-z0-9-]{{1,{TelefonConstraints.SlugMaxLength}}}$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private static readonly TimeSpan PhoneCacheDuration = TimeSpan.FromHours(6);
