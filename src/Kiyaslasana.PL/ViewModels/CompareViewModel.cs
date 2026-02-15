@@ -15,4 +15,8 @@ public sealed class CompareViewModel
     public required string MetaDescription { get; init; }
 
     public string? BreadcrumbJsonLd { get; init; }
+
+    public string? ItemListJsonLd { get; init; }
+
+    public required IReadOnlyList<CompareRelatedLinkViewModel> RelatedComparisons { get; init; }
 }

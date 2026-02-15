@@ -118,6 +118,7 @@ public sealed class KarsilastirController : SeoControllerBase
         }
 
         var canonicalPath = "/karsilastir/" + string.Join("-vs-", resolve.CanonicalSlugs);
+        var canonicalUrl = BuildAbsoluteUrl(canonicalPath);
         var indexable = isSeoIndexable && resolve.CanonicalSlugs.Count == 2;
         var comparisonTitle = string.Join(" vs ", resolve.Phones.Select(BuildPhoneTitle));
         var pageTitle = comparisonTitle.Length == 0 ? "Telefon Karsilastirma" : $"{comparisonTitle} Karsilastirma";
@@ -128,19 +129,32 @@ public sealed class KarsilastirController : SeoControllerBase
         SetSeo(
             title: pageTitle,
             description: metaDescription,
-            canonicalUrl: BuildAbsoluteUrl(canonicalPath));
+            canonicalUrl: canonicalUrl);
 
         ViewData["Robots"] = indexable ? "index,follow" : "noindex,follow";
         ViewData["Nav"] = "karsilastir";
+        SetSocialMetaTags(pageTitle, metaDescription, canonicalUrl, resolve.Phones);
+
+        var relatedLinks = await _telefonService.GetRelatedComparisonLinksAsync(resolve.CanonicalSlugs, perSlug: 6, totalMax: 12, ct);
+        var currentPhoneTitles = resolve.Phones
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
+            .ToDictionary(x => x.Slug!, BuildPhoneTitle, StringComparer.Ordinal);
 
         return View("~/Views/Compare/Compare.cshtml", new CompareViewModel
         {
             Phones = resolve.Phones,
             IsSeoIndexable = indexable,
-            CanonicalUrl = BuildAbsoluteUrl(canonicalPath),
+            CanonicalUrl = canonicalUrl,
             PageTitle = pageTitle,
             MetaDescription = metaDescription,
-            BreadcrumbJsonLd = indexable ? BuildBreadcrumbJsonLd(canonicalPath, resolve.Phones) : null
+            BreadcrumbJsonLd = indexable ? BuildBreadcrumbJsonLd(canonicalPath, resolve.Phones) : null,
+            ItemListJsonLd = indexable ? BuildItemListJsonLd(resolve.Phones) : null,
+            RelatedComparisons = relatedLinks.Select(x => new CompareRelatedLinkViewModel
+            {
+                Url = x.UrlPath,
+                Title = BuildRelatedTitle(x.CurrentSlug, x.OtherSlug, x.OtherTitle, currentPhoneTitles),
+                ImageUrl = NormalizeImageUrl(x.OtherImageUrl)
+            }).ToArray()
         });
     }
 
@@ -191,8 +205,8 @@ public sealed class KarsilastirController : SeoControllerBase
                 {
                     @type = "ListItem",
                     position = 2,
-                    name = "Karsilastir",
-                    item = BuildAbsoluteUrl("/karsilastir")
+                    name = "Telefonlar",
+                    item = BuildAbsoluteUrl("/telefonlar")
                 },
                 new
                 {
@@ -205,5 +219,84 @@ public sealed class KarsilastirController : SeoControllerBase
         };
 
         return JsonSerializer.Serialize(data);
+    }
+
+    private string BuildItemListJsonLd(IReadOnlyList<Kiyaslasana.EL.Entities.Telefon> phones)
+    {
+        var itemList = phones
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
+            .Take(2)
+            .Select((phone, index) => new
+            {
+                @type = "ListItem",
+                position = index + 1,
+                name = BuildPhoneTitle(phone),
+                url = BuildAbsoluteUrl($"/telefon/{phone.Slug}")
+            })
+            .ToArray();
+
+        var data = new
+        {
+            @context = "https://schema.org",
+            @type = "ItemList",
+            name = string.Join(" vs ", phones.Select(BuildPhoneTitle)),
+            itemListElement = itemList
+        };
+
+        return JsonSerializer.Serialize(data);
+    }
+
+    private void SetSocialMetaTags(
+        string title,
+        string description,
+        string canonicalUrl,
+        IReadOnlyList<Kiyaslasana.EL.Entities.Telefon> phones)
+    {
+        var imageUrl = phones
+            .Select(x => x.ResimUrl)
+            .Select(NormalizeImageUrl)
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+
+        ViewData["OgTitle"] = title;
+        ViewData["OgDescription"] = description;
+        ViewData["OgUrl"] = canonicalUrl;
+        ViewData["OgImage"] = imageUrl;
+
+        ViewData["TwitterCard"] = string.IsNullOrWhiteSpace(imageUrl) ? "summary" : "summary_large_image";
+        ViewData["TwitterTitle"] = title;
+        ViewData["TwitterDescription"] = description;
+        ViewData["TwitterUrl"] = canonicalUrl;
+        ViewData["TwitterImage"] = imageUrl;
+    }
+
+    private string? NormalizeImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return null;
+        }
+
+        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var absolute)
+            && (absolute.Scheme == Uri.UriSchemeHttp || absolute.Scheme == Uri.UriSchemeHttps))
+        {
+            return absolute.ToString();
+        }
+
+        var normalizedPath = imageUrl.StartsWith('/') ? imageUrl : "/" + imageUrl;
+        return BuildAbsoluteUrl(normalizedPath);
+    }
+
+    private static string BuildRelatedTitle(
+        string currentSlug,
+        string otherSlug,
+        string otherTitle,
+        IReadOnlyDictionary<string, string> currentPhoneTitles)
+    {
+        var currentTitle = currentPhoneTitles.TryGetValue(currentSlug, out var current)
+            ? current
+            : currentSlug;
+
+        var comparedTitle = string.IsNullOrWhiteSpace(otherTitle) ? otherSlug : otherTitle;
+        return $"{currentTitle} vs {comparedTitle}";
     }
 }

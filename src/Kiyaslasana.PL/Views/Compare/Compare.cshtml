@@ -74,9 +74,43 @@
     </div>
 </section>
 
+@if (Model.RelatedComparisons.Count > 0)
+{
+    <section class="section" style="padding-top: var(--space-4); padding-bottom: var(--space-10);">
+        <div class="container">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Ilgili Karsilastirmalar</h2>
+                    <p class="section-subtitle">Benzer modeller icin hizli karsilastirma baglantilari</p>
+                </div>
+            </div>
+            <div class="products-grid">
+                @foreach (var related in Model.RelatedComparisons)
+                {
+                    <article class="product-card">
+                        <div class="product-image">
+                            <img src="@(string.IsNullOrWhiteSpace(related.ImageUrl) ? "https://via.placeholder.com/200x300?text=Phone" : related.ImageUrl)" alt="@related.Title" />
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">@related.Title</h3>
+                            <div class="product-footer">
+                                <a class="btn btn-secondary btn-sm" href="@related.Url">Karsilastir</a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+}
+
 @if (!string.IsNullOrWhiteSpace(Model.BreadcrumbJsonLd))
 {
     @section JsonLd {
 <script type="application/ld+json">@Html.Raw(Model.BreadcrumbJsonLd)</script>
+@if (!string.IsNullOrWhiteSpace(Model.ItemListJsonLd))
+{
+<script type="application/ld+json">@Html.Raw(Model.ItemListJsonLd)</script>
+}
     }
 }

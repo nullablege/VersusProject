@@ -52,6 +52,26 @@ public sealed class EfTelefonRepository : ITelefonRepository
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<Telefon>> GetRelatedCandidatesAsync(int take, CancellationToken ct)
+    {
+        var safeTake = Math.Clamp(take, 1, 500);
+
+        return await _dbContext.Telefonlar
+            .AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
+            .OrderByDescending(x => x.KayitTarihi)
+            .ThenByDescending(x => x.Id)
+            .Select(x => new Telefon
+            {
+                Slug = x.Slug,
+                ModelAdi = x.ModelAdi,
+                Marka = x.Marka,
+                ResimUrl = x.ResimUrl
+            })
+            .Take(safeTake)
+            .ToListAsync(ct);
+    }
+
     public Task<int> CountAsync(CancellationToken ct)
     {
         return _dbContext.Telefonlar

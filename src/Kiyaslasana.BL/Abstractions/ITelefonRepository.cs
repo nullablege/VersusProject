@@ -10,6 +10,8 @@ public interface ITelefonRepository
 
     Task<IReadOnlyList<Telefon>> GetLatestAsync(int take, CancellationToken ct);
 
+    Task<IReadOnlyList<Telefon>> GetRelatedCandidatesAsync(int take, CancellationToken ct);
+
     Task<int> CountAsync(CancellationToken ct);
 
     Task<IReadOnlyList<string>> GetSlugsPageAsync(int skip, int take, CancellationToken ct);

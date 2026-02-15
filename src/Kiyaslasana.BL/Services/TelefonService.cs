@@ -9,12 +9,16 @@ namespace Kiyaslasana.BL.Services;
 
 public sealed class TelefonService : ITelefonService
 {
+    private const string RelatedCandidatesCacheKey = "telefon:compare:related-candidates:v1";
+    private const int RelatedCandidatesTake = 240;
+
     private static readonly Regex CacheableSlugRegex = new(
         $"^[a-z0-9-]{{1,{TelefonConstraints.SlugMaxLength}}}$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private static readonly TimeSpan PhoneCacheDuration = TimeSpan.FromHours(6);
     private static readonly TimeSpan ListCacheDuration = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan RelatedCandidatesCacheDuration = TimeSpan.FromHours(1);
 
     private readonly ITelefonRepository _telefonRepository;
     private readonly IMemoryCache _memoryCache;
@@ -186,6 +190,79 @@ public sealed class TelefonService : ITelefonService
         return value;
     }
 
+    public async Task<IReadOnlyList<RelatedComparisonLink>> GetRelatedComparisonLinksAsync(
+        IReadOnlyList<string> currentSlugs,
+        int perSlug,
+        int totalMax,
+        CancellationToken ct)
+    {
+        var normalizedCurrent = NormalizeDistinctSlugs(currentSlugs);
+        if (normalizedCurrent.Count == 0)
+        {
+            return [];
+        }
+
+        var safePerSlug = Math.Clamp(perSlug, 1, 12);
+        var safeTotalMax = Math.Clamp(totalMax, 1, 40);
+        var currentSet = new HashSet<string>(normalizedCurrent, StringComparer.Ordinal);
+
+        var relatedCandidates = await GetRelatedCandidatesAsync(ct);
+        if (relatedCandidates.Count == 0)
+        {
+            return [];
+        }
+
+        var output = new List<RelatedComparisonLink>(safeTotalMax);
+        var pairSet = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var currentSlug in normalizedCurrent)
+        {
+            var addedForCurrent = 0;
+
+            foreach (var candidate in relatedCandidates)
+            {
+                var otherSlug = NormalizeSlug(candidate.Slug);
+                if (!IsCacheableSlug(otherSlug) || currentSet.Contains(otherSlug))
+                {
+                    continue;
+                }
+
+                var canonicalLeft = string.Compare(currentSlug, otherSlug, StringComparison.Ordinal) <= 0
+                    ? currentSlug
+                    : otherSlug;
+                var canonicalRight = canonicalLeft == currentSlug ? otherSlug : currentSlug;
+                var pairKey = $"{canonicalLeft}|{canonicalRight}";
+
+                if (!pairSet.Add(pairKey))
+                {
+                    continue;
+                }
+
+                output.Add(new RelatedComparisonLink(
+                    CurrentSlug: currentSlug,
+                    OtherSlug: otherSlug,
+                    CanonicalLeftSlug: canonicalLeft,
+                    CanonicalRightSlug: canonicalRight,
+                    UrlPath: $"/karsilastir/{canonicalLeft}-vs-{canonicalRight}",
+                    OtherTitle: BuildPhoneTitle(candidate),
+                    OtherImageUrl: candidate.ResimUrl));
+
+                addedForCurrent++;
+                if (addedForCurrent >= safePerSlug || output.Count >= safeTotalMax)
+                {
+                    break;
+                }
+            }
+
+            if (output.Count >= safeTotalMax)
+            {
+                break;
+            }
+        }
+
+        return output;
+    }
+
     private List<string> NormalizeDistinctSlugs(IEnumerable<string> slugs)
     {
         var result = new List<string>();
@@ -206,6 +283,31 @@ public sealed class TelefonService : ITelefonService
         }
 
         return result;
+    }
+
+    private async Task<IReadOnlyList<Telefon>> GetRelatedCandidatesAsync(CancellationToken ct)
+    {
+        if (_memoryCache.TryGetValue<IReadOnlyList<Telefon>>(RelatedCandidatesCacheKey, out var cached)
+            && cached is not null)
+        {
+            return cached;
+        }
+
+        var relatedCandidates = await _telefonRepository.GetRelatedCandidatesAsync(RelatedCandidatesTake, ct);
+        var value = relatedCandidates ?? [];
+
+        _memoryCache.Set(RelatedCandidatesCacheKey, value, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = RelatedCandidatesCacheDuration,
+            Size = 1
+        });
+
+        return value;
+    }
+
+    private static string BuildPhoneTitle(Telefon phone)
+    {
+        return string.Join(' ', new[] { phone.Marka, phone.ModelAdi }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
     }
 
     private static bool IsCacheableSlug(string slug)

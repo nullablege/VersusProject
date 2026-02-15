@@ -76,6 +76,28 @@ public class TelefonServiceTests
         Assert.Equal(new[] { "alpha", "zeta" }, result.Phones.Select(x => x.Slug));
     }
 
+    [Fact]
+    public async Task GetRelatedComparisonLinksAsync_CreatesCanonicalUniquePairs()
+    {
+        var service = CreateService();
+
+        var links = await service.GetRelatedComparisonLinksAsync(["alpha", "beta"], perSlug: 6, totalMax: 12, CancellationToken.None);
+
+        Assert.NotEmpty(links);
+        Assert.All(links, link => Assert.True(string.Compare(link.CanonicalLeftSlug, link.CanonicalRightSlug, StringComparison.Ordinal) < 0));
+        Assert.Equal(links.Count, links.Select(x => $"{x.CanonicalLeftSlug}|{x.CanonicalRightSlug}").Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
+    public async Task GetRelatedComparisonLinksAsync_RespectsPerSlugAndTotalLimits()
+    {
+        var service = CreateService();
+
+        var links = await service.GetRelatedComparisonLinksAsync(["alpha"], perSlug: 2, totalMax: 3, CancellationToken.None);
+
+        Assert.Equal(2, links.Count);
+    }
+
     private static TelefonService CreateService()
     {
         return new TelefonService(new StubTelefonRepository(), new MemoryCache(new MemoryCacheOptions()));
@@ -97,6 +119,18 @@ public class TelefonServiceTests
         public Task<IReadOnlyList<Telefon>> GetLatestAsync(int take, CancellationToken ct)
         {
             IReadOnlyList<Telefon> list = Array.Empty<Telefon>();
+            return Task.FromResult(list);
+        }
+
+        public Task<IReadOnlyList<Telefon>> GetRelatedCandidatesAsync(int take, CancellationToken ct)
+        {
+            IReadOnlyList<Telefon> list =
+            [
+                new Telefon { Slug = "gamma", Marka = "Brand", ModelAdi = "Gamma" },
+                new Telefon { Slug = "delta", Marka = "Brand", ModelAdi = "Delta" },
+                new Telefon { Slug = "epsilon", Marka = "Brand", ModelAdi = "Epsilon" },
+                new Telefon { Slug = "zeta", Marka = "Brand", ModelAdi = "Zeta" }
+            ];
             return Task.FromResult(list);
         }
 
