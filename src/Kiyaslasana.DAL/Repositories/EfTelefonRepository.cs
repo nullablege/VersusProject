@@ -161,9 +161,12 @@ public sealed class EfTelefonRepository : ITelefonRepository
             .Where(predicate);
 
         var totalCount = await baseQuery.CountAsync(ct);
+        var maxSkip = totalCount <= 0 ? 0 : ((totalCount - 1) / take) * take;
+        var effectiveSkip = Math.Min(safeSkip, maxSkip);
+
         var items = await baseQuery
             .OrderBy(x => x.Slug)
-            .Skip(safeSkip)
+            .Skip(effectiveSkip)
             .Take(take)
             .ToListAsync(ct);
 

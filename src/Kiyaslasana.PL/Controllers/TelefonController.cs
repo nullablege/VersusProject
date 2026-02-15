@@ -152,13 +152,6 @@ public sealed class TelefonController : SeoControllerBase
         var (items, totalCount) = await _telefonRepository.GetPagedByPredicateAsync(filter.Predicate, initialSkip, ListingPageSize, ct);
         var paging = PagingHelper.Normalize(page, ListingPageSize, totalCount);
 
-        if (paging.Skip != initialSkip)
-        {
-            var clampedResult = await _telefonRepository.GetPagedByPredicateAsync(filter.Predicate, paging.Skip, ListingPageSize, ct);
-            items = clampedResult.Items;
-            totalCount = clampedResult.TotalCount;
-        }
-
         var brandMap = await GetBrandSlugMapAsync(ct);
         var basePath = $"/telefonlar/{filter.Slug}";
         var viewModel = BuildListViewModel(
