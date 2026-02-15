@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.OutputCaching;
 
 namespace Kiyaslasana.PL.Controllers;
 
-public sealed class SitemapController : Controller
+public sealed class SitemapController : SeoControllerBase
 {
     private const int TelefonSitemapPageSize = 40000;
 
@@ -30,6 +30,8 @@ public sealed class SitemapController : Controller
 
         sitemapIndex.Add(new XElement(ns + "sitemap",
             new XElement(ns + "loc", $"{baseUrl}/sitemaps/static.xml")));
+        sitemapIndex.Add(new XElement(ns + "sitemap",
+            new XElement(ns + "loc", $"{baseUrl}/sitemaps/markalar.xml")));
 
         for (var page = 1; page <= totalPages; page++)
         {
@@ -52,6 +54,26 @@ public sealed class SitemapController : Controller
             new XElement(ns + "url", new XElement(ns + "loc", baseUrl + "/")),
             new XElement(ns + "url", new XElement(ns + "loc", baseUrl + "/telefonlar")),
             new XElement(ns + "url", new XElement(ns + "loc", baseUrl + "/karsilastir")));
+
+        var doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), urlset);
+        return Content(doc.ToString(SaveOptions.DisableFormatting), "application/xml; charset=utf-8");
+    }
+
+    [HttpGet("/sitemaps/markalar.xml")]
+    [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneDay)]
+    public async Task<IActionResult> MarkaSitemap(CancellationToken ct)
+    {
+        var baseUrl = GetBaseUrl();
+        var brandSlugs = await _telefonSitemapQuery.GetBrandSlugsAsync(ct);
+
+        XNamespace ns = "http://www.sitemaps.org/schemas/sitemap/0.9";
+        var urlset = new XElement(ns + "urlset");
+
+        foreach (var brandSlug in brandSlugs)
+        {
+            urlset.Add(new XElement(ns + "url",
+                new XElement(ns + "loc", $"{baseUrl}/telefonlar/marka/{brandSlug}")));
+        }
 
         var doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), urlset);
         return Content(doc.ToString(SaveOptions.DisableFormatting), "application/xml; charset=utf-8");
@@ -99,6 +121,7 @@ public sealed class SitemapController : Controller
 
     private string GetBaseUrl()
     {
-        return $"{Request.Scheme}://{Request.Host}";
+        var rootUrl = BuildAbsoluteUrl("/");
+        return rootUrl.EndsWith('/') ? rootUrl[..^1] : rootUrl;
     }
 }

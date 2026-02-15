@@ -5,4 +5,6 @@ public interface ITelefonSitemapQuery
     Task<int> CountAsync(CancellationToken ct);
 
     Task<IReadOnlyList<string>> GetSlugsPageAsync(int skip, int take, CancellationToken ct);
+
+    Task<IReadOnlyList<string>> GetBrandSlugsAsync(CancellationToken ct);
 }

@@ -188,32 +188,32 @@ public sealed class KarsilastirController : SeoControllerBase
     private string BuildBreadcrumbJsonLd(string canonicalPath, IReadOnlyList<Kiyaslasana.EL.Entities.Telefon> phones)
     {
         var compareTitle = string.Join(" vs ", phones.Select(BuildPhoneTitle));
-        var data = new
+        var data = new Dictionary<string, object?>
         {
-            @context = "https://schema.org",
-            @type = "BreadcrumbList",
-            itemListElement = new object[]
+            ["@context"] = "https://schema.org",
+            ["@type"] = "BreadcrumbList",
+            ["itemListElement"] = new object[]
             {
-                new
+                new Dictionary<string, object?>
                 {
-                    @type = "ListItem",
-                    position = 1,
-                    name = "Ana Sayfa",
-                    item = BuildAbsoluteUrl("/")
+                    ["@type"] = "ListItem",
+                    ["position"] = 1,
+                    ["name"] = "Ana Sayfa",
+                    ["item"] = BuildAbsoluteUrl("/")
                 },
-                new
+                new Dictionary<string, object?>
                 {
-                    @type = "ListItem",
-                    position = 2,
-                    name = "Telefonlar",
-                    item = BuildAbsoluteUrl("/telefonlar")
+                    ["@type"] = "ListItem",
+                    ["position"] = 2,
+                    ["name"] = "Telefonlar",
+                    ["item"] = BuildAbsoluteUrl("/telefonlar")
                 },
-                new
+                new Dictionary<string, object?>
                 {
-                    @type = "ListItem",
-                    position = 3,
-                    name = compareTitle,
-                    item = BuildAbsoluteUrl(canonicalPath)
+                    ["@type"] = "ListItem",
+                    ["position"] = 3,
+                    ["name"] = compareTitle,
+                    ["item"] = BuildAbsoluteUrl(canonicalPath)
                 }
             }
         };
@@ -226,21 +226,32 @@ public sealed class KarsilastirController : SeoControllerBase
         var itemList = phones
             .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
             .Take(2)
-            .Select((phone, index) => new
+            .Select((phone, index) =>
             {
-                @type = "ListItem",
-                position = index + 1,
-                name = BuildPhoneTitle(phone),
-                url = BuildAbsoluteUrl($"/telefon/{phone.Slug}")
+                var item = new Dictionary<string, object?>
+                {
+                    ["@type"] = "ListItem",
+                    ["position"] = index + 1,
+                    ["name"] = BuildPhoneTitle(phone),
+                    ["url"] = BuildAbsoluteUrl($"/telefon/{phone.Slug}")
+                };
+
+                var imageUrl = NormalizeImageUrl(phone.ResimUrl);
+                if (!string.IsNullOrWhiteSpace(imageUrl))
+                {
+                    item["image"] = imageUrl;
+                }
+
+                return item;
             })
             .ToArray();
 
-        var data = new
+        var data = new Dictionary<string, object?>
         {
-            @context = "https://schema.org",
-            @type = "ItemList",
-            name = string.Join(" vs ", phones.Select(BuildPhoneTitle)),
-            itemListElement = itemList
+            ["@context"] = "https://schema.org",
+            ["@type"] = "ItemList",
+            ["name"] = string.Join(" vs ", phones.Select(BuildPhoneTitle)),
+            ["itemListElement"] = itemList
         };
 
         return JsonSerializer.Serialize(data);
