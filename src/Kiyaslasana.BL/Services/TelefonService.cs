@@ -134,7 +134,7 @@ public sealed class TelefonService : ITelefonService
             return null;
         }
 
-        _memoryCache.Set(cacheKey, phone, new MemoryCacheEntryOptions
+        SetCacheEntry(cacheKey, phone, new MemoryCacheEntryOptions
         {
             AbsoluteExpirationRelativeToNow = PhoneCacheDuration,
             Size = 1
@@ -181,7 +181,7 @@ public sealed class TelefonService : ITelefonService
         var latest = await _telefonRepository.GetLatestAsync(safeTake, ct);
         var value = latest ?? [];
 
-        _memoryCache.Set(cacheKey, value, new MemoryCacheEntryOptions
+        SetCacheEntry(cacheKey, value, new MemoryCacheEntryOptions
         {
             AbsoluteExpirationRelativeToNow = ListCacheDuration,
             Size = 1
@@ -296,10 +296,12 @@ public sealed class TelefonService : ITelefonService
         var relatedCandidates = await _telefonRepository.GetRelatedCandidatesAsync(RelatedCandidatesTake, ct);
         var value = relatedCandidates ?? [];
 
-        _memoryCache.Set(RelatedCandidatesCacheKey, value, new MemoryCacheEntryOptions
+        SetCacheEntry(RelatedCandidatesCacheKey, value, new MemoryCacheEntryOptions
         {
+            // Keep hot lists warm while bounding stale data lifetime and memory impact.
             AbsoluteExpirationRelativeToNow = RelatedCandidatesCacheDuration,
-            Size = 1
+            SlidingExpiration = TimeSpan.FromMinutes(20),
+            Size = 5
         });
 
         return value;
@@ -308,6 +310,23 @@ public sealed class TelefonService : ITelefonService
     private static string BuildPhoneTitle(Telefon phone)
     {
         return string.Join(' ', new[] { phone.Marka, phone.ModelAdi }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+    }
+
+    private void SetCacheEntry<T>(string key, T value, MemoryCacheEntryOptions options)
+    {
+        try
+        {
+            _memoryCache.Set(key, value, options);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("size", StringComparison.OrdinalIgnoreCase))
+        {
+            // Fallback for hosts/tests that do not configure MemoryCache.SizeLimit.
+            _memoryCache.Set(key, value, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = options.AbsoluteExpirationRelativeToNow,
+                SlidingExpiration = options.SlidingExpiration
+            });
+        }
     }
 
     private static bool IsCacheableSlug(string slug)
