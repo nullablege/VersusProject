@@ -4,6 +4,10 @@ namespace Kiyaslasana.PL.ViewModels;
 
 public sealed class TelefonListViewModel
 {
+    public required string ListingTitle { get; init; }
+
+    public required string ListingDescription { get; init; }
+
     public required IReadOnlyList<Telefon> Items { get; init; }
 
     public required IReadOnlyList<BrandLinkViewModel> Brands { get; init; }

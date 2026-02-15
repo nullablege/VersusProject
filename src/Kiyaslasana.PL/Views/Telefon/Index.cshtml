@@ -2,16 +2,8 @@
 
 <section class="hero" style="padding: var(--space-8) 0;">
     <div class="container">
-        @if (string.IsNullOrWhiteSpace(Model.Brand))
-        {
-            <h1 class="hero-title" style="font-size: var(--text-h2);">Tum Telefonlar</h1>
-            <p class="hero-subtitle" style="margin-bottom: 0;">Veritabanina eklenmis tum telefon modelleri.</p>
-        }
-        else
-        {
-            <h1 class="hero-title" style="font-size: var(--text-h2);">@Model.Brand Telefonlari</h1>
-            <p class="hero-subtitle" style="margin-bottom: 0;">@Model.Brand markasina ait telefon modelleri.</p>
-        }
+        <h1 class="hero-title" style="font-size: var(--text-h2);">@Model.ListingTitle</h1>
+        <p class="hero-subtitle" style="margin-bottom: 0;">@Model.ListingDescription</p>
     </div>
 </section>
 

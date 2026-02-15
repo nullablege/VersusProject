@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Kiyaslasana.EL.Entities;
 
 namespace Kiyaslasana.BL.Abstractions;
@@ -19,6 +20,12 @@ public interface ITelefonRepository
     Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedAsync(int skip, int take, CancellationToken ct);
 
     Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedByBrandAsync(string brand, int skip, int take, CancellationToken ct);
+
+    Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedByPredicateAsync(
+        Expression<Func<Telefon, bool>> predicate,
+        int skip,
+        int take,
+        CancellationToken ct);
 
     Task<IReadOnlyList<Telefon>> GetLatestByBrandAsync(string brand, int take, CancellationToken ct);
 

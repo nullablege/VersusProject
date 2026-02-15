@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.BL.Helpers;
+using Kiyaslasana.BL.SeoFilters;
 using Kiyaslasana.EL.Entities;
 using Kiyaslasana.PL.Infrastructure;
 using Kiyaslasana.PL.ViewModels;
@@ -40,6 +41,8 @@ public sealed class TelefonController : SeoControllerBase
     {
         var requestedPage = Math.Max(page, 1);
         var initialSkip = (requestedPage - 1) * ListingPageSize;
+        const string title = "Tum Telefonlar";
+        const string description = "Veritabanina eklenmis tum telefon modelleri.";
 
         var (items, totalCount) = await _telefonRepository.GetPagedAsync(initialSkip, ListingPageSize, ct);
         var paging = PagingHelper.Normalize(requestedPage, ListingPageSize, totalCount);
@@ -62,9 +65,11 @@ public sealed class TelefonController : SeoControllerBase
             basePath: "/telefonlar",
             selectedBrandSlug: null,
             selectedBrand: null,
-            popularComparisons: []);
+            popularComparisons: [],
+            listingTitle: title,
+            listingDescription: description);
 
-        ApplyListingSeo(viewModel, "Tum Telefonlar", "Tum telefon modellerini sayfali listede gor ve karsilastirma icin secim yap.");
+        ApplyListingSeo(viewModel, title, description);
 
         ViewData["Nav"] = "telefonlar";
         return View(viewModel);
@@ -104,6 +109,8 @@ public sealed class TelefonController : SeoControllerBase
 
         var basePath = $"/telefonlar/marka/{normalizedBrandSlug}";
         var popularComparisons = await GetBrandPopularComparisonsAsync(brand, normalizedBrandSlug, ct);
+        var listingTitle = $"{brand} Telefonlari";
+        var listingDescription = $"{brand} markasina ait telefon modelleri.";
         var viewModel = BuildListViewModel(
             items: items,
             totalCount: totalCount,
@@ -114,14 +121,63 @@ public sealed class TelefonController : SeoControllerBase
             basePath: basePath,
             selectedBrandSlug: normalizedBrandSlug,
             selectedBrand: brand,
-            popularComparisons: popularComparisons);
+            popularComparisons: popularComparisons,
+            listingTitle: listingTitle,
+            listingDescription: listingDescription);
 
-        ApplyListingSeo(
-            viewModel,
-            $"{brand} Telefonlari",
-            $"{brand} marka telefon modellerini sayfali listede gor ve karsilastirma icin secim yap.");
+        ApplyListingSeo(viewModel, listingTitle, listingDescription);
 
         ViewData["Nav"] = "telefonlar";
+        return View("Index", viewModel);
+    }
+
+    [HttpGet("/telefonlar/{filterSlug}")]
+    [OutputCache(
+        PolicyName = OutputCachePolicyNames.AnonymousOneHour,
+        VaryByRouteValueNames = ["filterSlug"],
+        VaryByQueryKeys = ["page"])]
+    public async Task<IActionResult> ByFilter(string filterSlug, [FromQuery] int page = 1, CancellationToken ct = default)
+    {
+        if (page < 1)
+        {
+            return NotFound();
+        }
+
+        if (!SeoFilterRegistry.TryGet(filterSlug, out var filter))
+        {
+            return NotFound();
+        }
+
+        var initialSkip = (page - 1) * ListingPageSize;
+        var (items, totalCount) = await _telefonRepository.GetPagedByPredicateAsync(filter.Predicate, initialSkip, ListingPageSize, ct);
+        var paging = PagingHelper.Normalize(page, ListingPageSize, totalCount);
+
+        if (paging.Skip != initialSkip)
+        {
+            var clampedResult = await _telefonRepository.GetPagedByPredicateAsync(filter.Predicate, paging.Skip, ListingPageSize, ct);
+            items = clampedResult.Items;
+            totalCount = clampedResult.TotalCount;
+        }
+
+        var brandMap = await GetBrandSlugMapAsync(ct);
+        var basePath = $"/telefonlar/{filter.Slug}";
+        var viewModel = BuildListViewModel(
+            items: items,
+            totalCount: totalCount,
+            page: paging.Page,
+            totalPages: paging.TotalPages,
+            pageSize: paging.PageSize,
+            brandMap: brandMap,
+            basePath: basePath,
+            selectedBrandSlug: null,
+            selectedBrand: null,
+            popularComparisons: [],
+            listingTitle: filter.Title,
+            listingDescription: filter.MetaDescription);
+
+        ApplyListingSeo(viewModel, filter.Title, filter.MetaDescription);
+        ViewData["Nav"] = "telefonlar";
+
         return View("Index", viewModel);
     }
 
@@ -261,7 +317,9 @@ public sealed class TelefonController : SeoControllerBase
         string basePath,
         string? selectedBrandSlug,
         string? selectedBrand,
-        IReadOnlyList<CompareRelatedLinkViewModel> popularComparisons)
+        IReadOnlyList<CompareRelatedLinkViewModel> popularComparisons,
+        string listingTitle,
+        string listingDescription)
     {
         var brands = brandMap
             .OrderBy(x => x.Value, StringComparer.OrdinalIgnoreCase)
@@ -280,6 +338,8 @@ public sealed class TelefonController : SeoControllerBase
 
         return new TelefonListViewModel
         {
+            ListingTitle = listingTitle,
+            ListingDescription = listingDescription,
             Items = items,
             Brands = brands,
             Page = page,

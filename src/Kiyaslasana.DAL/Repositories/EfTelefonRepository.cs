@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.DAL.Data;
 using Kiyaslasana.EL.Entities;
@@ -131,6 +132,33 @@ public sealed class EfTelefonRepository : ITelefonRepository
         var baseQuery = _dbContext.Telefonlar
             .AsNoTracking()
             .Where(x => !string.IsNullOrWhiteSpace(x.Slug) && x.Marka == brand);
+
+        var totalCount = await baseQuery.CountAsync(ct);
+        var items = await baseQuery
+            .OrderBy(x => x.Slug)
+            .Skip(safeSkip)
+            .Take(take)
+            .ToListAsync(ct);
+
+        return (items, totalCount);
+    }
+
+    public async Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedByPredicateAsync(
+        Expression<Func<Telefon, bool>> predicate,
+        int skip,
+        int take,
+        CancellationToken ct)
+    {
+        if (take <= 0)
+        {
+            return ([], 0);
+        }
+
+        var safeSkip = Math.Max(skip, 0);
+        var baseQuery = _dbContext.Telefonlar
+            .AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
+            .Where(predicate);
 
         var totalCount = await baseQuery.CountAsync(ct);
         var items = await baseQuery
