@@ -22,15 +22,18 @@ public sealed class TelefonController : SeoControllerBase
     private static readonly TimeSpan DetailCompareCacheDuration = TimeSpan.FromHours(1);
 
     private readonly ITelefonService _telefonService;
+    private readonly ITelefonReviewService _telefonReviewService;
     private readonly ITelefonRepository _telefonRepository;
     private readonly IMemoryCache _memoryCache;
 
     public TelefonController(
         ITelefonService telefonService,
+        ITelefonReviewService telefonReviewService,
         ITelefonRepository telefonRepository,
         IMemoryCache memoryCache)
     {
         _telefonService = telefonService;
+        _telefonReviewService = telefonReviewService;
         _telefonRepository = telefonRepository;
         _memoryCache = memoryCache;
     }
@@ -188,10 +191,15 @@ public sealed class TelefonController : SeoControllerBase
         }
 
         var title = BuildPhoneTitle(phone);
+        var review = await _telefonReviewService.GetByTelefonSlugAsync(normalizedSlug, ct);
+        var seoTitle = !string.IsNullOrWhiteSpace(review?.SeoTitle) ? review.SeoTitle : title;
+        var seoDescription = !string.IsNullOrWhiteSpace(review?.SeoDescription)
+            ? review.SeoDescription
+            : $"{title} teknik ozellikleri, fiyat bilgisi ve karsilastirma detaylari.";
 
         SetSeo(
-            title: title,
-            description: $"{title} teknik ozellikleri, fiyat bilgisi ve karsilastirma detaylari.",
+            title: seoTitle!,
+            description: seoDescription!,
             canonicalUrl: BuildAbsoluteUrl($"/telefon/{normalizedSlug}"));
 
         ViewData["Nav"] = "telefonlar";
@@ -200,6 +208,7 @@ public sealed class TelefonController : SeoControllerBase
         return View(new TelefonDetailViewModel
         {
             Telefon = phone,
+            Review = review,
             ProductJsonLd = BuildProductJsonLd(phone, normalizedSlug),
             BreadcrumbJsonLd = BuildBreadcrumbJsonLd(phone, normalizedSlug),
             CompareSuggestions = compareSuggestions

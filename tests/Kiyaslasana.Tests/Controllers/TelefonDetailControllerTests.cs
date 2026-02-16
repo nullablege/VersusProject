@@ -1,5 +1,4 @@
-using System.Linq.Expressions;
-using System.Text.Json;
+﻿using System.Linq.Expressions;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.BL.Contracts;
 using Kiyaslasana.EL.Entities;
@@ -14,79 +13,10 @@ using Microsoft.Extensions.Hosting;
 
 namespace Kiyaslasana.Tests.Controllers;
 
-public class TelefonFilterControllerTests
+public class TelefonDetailControllerTests
 {
     [Fact]
-    public async Task ByFilter_ValidSlug_ReturnsViewResult()
-    {
-        var controller = CreateController();
-
-        var result = await controller.ByFilter("5g-telefonlar", page: 1, CancellationToken.None);
-
-        var view = Assert.IsType<ViewResult>(result);
-        Assert.Equal("Index", view.ViewName);
-        Assert.IsType<TelefonListViewModel>(view.Model);
-    }
-
-    [Fact]
-    public async Task ByFilter_InvalidSlug_ReturnsNotFound()
-    {
-        var controller = CreateController();
-
-        var result = await controller.ByFilter("olmayan-filtre", page: 1, CancellationToken.None);
-
-        Assert.IsType<NotFoundResult>(result);
-    }
-
-    [Fact]
-    public async Task ByFilter_Page2_SetsNoindex()
-    {
-        var controller = CreateController();
-
-        var result = await controller.ByFilter("5g-telefonlar", page: 2, CancellationToken.None);
-
-        Assert.IsType<ViewResult>(result);
-        Assert.Equal("noindex,follow", controller.ViewData["Robots"]);
-    }
-
-    [Fact]
-    public async Task ByFilter_Canonical_IsCorrectForPage1AndPage2()
-    {
-        var page1Controller = CreateController();
-        var page1Result = await page1Controller.ByFilter("5g-telefonlar", page: 1, CancellationToken.None);
-        Assert.IsType<ViewResult>(page1Result);
-
-        var page2Controller = CreateController();
-        var page2Result = await page2Controller.ByFilter("5g-telefonlar", page: 2, CancellationToken.None);
-        Assert.IsType<ViewResult>(page2Result);
-
-        Assert.Equal("https://kiyaslasana.com/telefonlar/5g-telefonlar", page1Controller.ViewData["Canonical"]);
-        Assert.Equal("https://kiyaslasana.com/telefonlar/5g-telefonlar?page=2", page2Controller.ViewData["Canonical"]);
-    }
-
-    [Fact]
-    public async Task ByFilter_SetsValidItemListJsonLd()
-    {
-        var controller = CreateController();
-        var result = await controller.ByFilter("5g-telefonlar", page: 1, CancellationToken.None);
-
-        Assert.IsType<ViewResult>(result);
-        var jsonLd = Assert.IsType<string>(controller.ViewData["FilterItemListJsonLd"]);
-
-        using var doc = JsonDocument.Parse(jsonLd);
-        Assert.Equal("https://schema.org", doc.RootElement.GetProperty("@context").GetString());
-        Assert.Equal("ItemList", doc.RootElement.GetProperty("@type").GetString());
-
-        var items = doc.RootElement.GetProperty("itemListElement");
-        Assert.True(items.GetArrayLength() > 0);
-
-        var first = items[0];
-        Assert.Equal("Product", first.GetProperty("@type").GetString());
-        Assert.Equal(1, first.GetProperty("position").GetInt32());
-        Assert.False(string.IsNullOrWhiteSpace(first.GetProperty("url").GetString()));
-    }
-
-    private static TelefonController CreateController()
+    public async Task Detail_WhenReviewExists_UsesReviewSeoAndSetsReviewModel()
     {
         var controller = new TelefonController(
             new StubTelefonService(),
@@ -99,7 +29,13 @@ public class TelefonFilterControllerTests
             HttpContext = BuildHttpContext()
         };
 
-        return controller;
+        var result = await controller.Detail("test-phone", CancellationToken.None);
+
+        var view = Assert.IsType<ViewResult>(result);
+        var model = Assert.IsType<TelefonDetailViewModel>(view.Model);
+        Assert.NotNull(model.Review);
+        Assert.Equal("Review SEO Title", controller.ViewData["Title"]);
+        Assert.Equal("Review SEO Description", controller.ViewData["MetaDescription"]);
     }
 
     private static HttpContext BuildHttpContext()
@@ -145,7 +81,18 @@ public class TelefonFilterControllerTests
 
         public Task<Telefon?> GetBySlugAsync(string slug, CancellationToken ct)
         {
-            return Task.FromResult<Telefon?>(null);
+            if (slug != "test-phone")
+            {
+                return Task.FromResult<Telefon?>(null);
+            }
+
+            return Task.FromResult<Telefon?>(new Telefon
+            {
+                Slug = "test-phone",
+                Marka = "Test",
+                ModelAdi = "Phone",
+                Fiyat = "100"
+            });
         }
 
         public Task<IReadOnlyList<Telefon>> GetBySlugsAsync(IReadOnlyList<string> slugs, CancellationToken ct)
@@ -175,12 +122,28 @@ public class TelefonFilterControllerTests
     {
         public Task<TelefonReview?> GetByTelefonSlugAsync(string slug, CancellationToken ct)
         {
-            return Task.FromResult<TelefonReview?>(null);
+            if (slug != "test-phone")
+            {
+                return Task.FromResult<TelefonReview?>(null);
+            }
+
+            return Task.FromResult<TelefonReview?>(new TelefonReview
+            {
+                TelefonSlug = "test-phone",
+                Title = "Inceleme",
+                Excerpt = "Ozet",
+                RawContent = "<p>raw</p>",
+                SanitizedContent = "<p>safe</p>",
+                SeoTitle = "Review SEO Title",
+                SeoDescription = "Review SEO Description",
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            });
         }
 
         public Task<TelefonReviewUpsertResult> UpsertAsync(string slug, TelefonReviewUpsertInput input, CancellationToken ct)
         {
-            return Task.FromResult(new TelefonReviewUpsertResult(false, "Not implemented for test.", null));
+            return Task.FromResult(new TelefonReviewUpsertResult(false, null, null));
         }
 
         public Task<bool> DeleteAsync(string slug, CancellationToken ct)
@@ -206,71 +169,47 @@ public class TelefonFilterControllerTests
 
     private sealed class StubTelefonRepository : ITelefonRepository
     {
-        private static readonly IReadOnlyList<Telefon> Phones = Enumerable.Range(1, 60)
-            .Select(x => new Telefon
-            {
-                Slug = $"test-5g-{x:D3}",
-                Marka = "TestBrand",
-                ModelAdi = $"Model {x}",
-                NetworkTeknolojisi = "GSM / HSPA / LTE / 5G"
-            })
-            .ToArray();
-
         public Task<Telefon?> GetBySlugAsync(string slug, CancellationToken ct)
         {
-            return Task.FromResult(Phones.FirstOrDefault(x => x.Slug == slug));
+            return Task.FromResult<Telefon?>(null);
         }
 
         public Task<List<Telefon>> GetBySlugsAsync(IEnumerable<string> slugs, CancellationToken ct)
         {
-            var slugSet = slugs.ToHashSet(StringComparer.Ordinal);
-            return Task.FromResult(Phones.Where(x => x.Slug is not null && slugSet.Contains(x.Slug)).ToList());
+            return Task.FromResult(new List<Telefon>());
         }
 
         public Task<IReadOnlyList<Telefon>> GetLatestAsync(int take, CancellationToken ct)
         {
-            return Task.FromResult((IReadOnlyList<Telefon>)Phones.Take(Math.Clamp(take, 1, 50)).ToArray());
+            IReadOnlyList<Telefon> list = [];
+            return Task.FromResult(list);
         }
 
         public Task<IReadOnlyList<Telefon>> GetRelatedCandidatesAsync(int take, CancellationToken ct)
         {
-            return Task.FromResult((IReadOnlyList<Telefon>)Phones.Take(Math.Clamp(take, 1, 500)).ToArray());
+            IReadOnlyList<Telefon> list = [];
+            return Task.FromResult(list);
         }
 
         public Task<int> CountAsync(CancellationToken ct)
         {
-            return Task.FromResult(Phones.Count);
+            return Task.FromResult(0);
         }
 
         public Task<IReadOnlyList<string>> GetSlugsPageAsync(int skip, int take, CancellationToken ct)
         {
-            var safeSkip = Math.Max(skip, 0);
-            var safeTake = Math.Max(take, 0);
-            return Task.FromResult((IReadOnlyList<string>)Phones
-                .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
-                .Select(x => x.Slug!)
-                .OrderBy(x => x, StringComparer.Ordinal)
-                .Skip(safeSkip)
-                .Take(safeTake)
-                .ToArray());
+            IReadOnlyList<string> list = [];
+            return Task.FromResult(list);
         }
 
         public Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedAsync(int skip, int take, CancellationToken ct)
         {
-            var ordered = Phones.OrderBy(x => x.Slug, StringComparer.Ordinal).ToArray();
-            var safeSkip = Math.Max(skip, 0);
-            var safeTake = Math.Max(take, 0);
-            var items = ordered.Skip(safeSkip).Take(safeTake).ToArray();
-            return Task.FromResult(((IReadOnlyList<Telefon>)items, ordered.Length));
+            return Task.FromResult(((IReadOnlyList<Telefon>)[], 0));
         }
 
         public Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedByBrandAsync(string brand, int skip, int take, CancellationToken ct)
         {
-            var filtered = Phones.Where(x => x.Marka == brand).OrderBy(x => x.Slug, StringComparer.Ordinal).ToArray();
-            var safeSkip = Math.Max(skip, 0);
-            var safeTake = Math.Max(take, 0);
-            var items = filtered.Skip(safeSkip).Take(safeTake).ToArray();
-            return Task.FromResult(((IReadOnlyList<Telefon>)items, filtered.Length));
+            return Task.FromResult(((IReadOnlyList<Telefon>)[], 0));
         }
 
         public Task<(IReadOnlyList<Telefon> Items, int TotalCount)> GetPagedByPredicateAsync(
@@ -279,32 +218,19 @@ public class TelefonFilterControllerTests
             int take,
             CancellationToken ct)
         {
-            var compiled = predicate.Compile();
-            var filtered = Phones
-                .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
-                .Where(compiled)
-                .OrderBy(x => x.Slug, StringComparer.Ordinal)
-                .ToArray();
-
-            var safeTake = Math.Max(take, 0);
-            var safeSkip = Math.Max(skip, 0);
-            var maxSkip = filtered.Length <= 0 || safeTake <= 0 ? 0 : ((filtered.Length - 1) / safeTake) * safeTake;
-            var effectiveSkip = Math.Min(safeSkip, maxSkip);
-            var items = safeTake <= 0 ? [] : filtered.Skip(effectiveSkip).Take(safeTake).ToArray();
-
-            return Task.FromResult(((IReadOnlyList<Telefon>)items, filtered.Length));
+            return Task.FromResult(((IReadOnlyList<Telefon>)[], 0));
         }
 
         public Task<IReadOnlyList<Telefon>> GetLatestByBrandAsync(string brand, int take, CancellationToken ct)
         {
-            var filtered = Phones.Where(x => x.Marka == brand).Take(Math.Clamp(take, 1, 50)).ToArray();
-            return Task.FromResult((IReadOnlyList<Telefon>)filtered);
+            IReadOnlyList<Telefon> list = [];
+            return Task.FromResult(list);
         }
 
         public Task<IReadOnlyList<string>> GetDistinctBrandsAsync(CancellationToken ct)
         {
-            IReadOnlyList<string> brands = ["TestBrand"];
-            return Task.FromResult(brands);
+            IReadOnlyList<string> list = [];
+            return Task.FromResult(list);
         }
     }
 

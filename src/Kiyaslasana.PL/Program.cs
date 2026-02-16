@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Data.Common;
 using Kiyaslasana.BL;
 using Kiyaslasana.DAL;
 using Kiyaslasana.DAL.Data;
@@ -29,6 +30,7 @@ builder.Services.Configure<RouteOptions>(options =>
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddScoped<IValidator<BlogPostEditorInputModel>, BlogPostEditorInputValidator>();
+builder.Services.AddScoped<IValidator<TelefonReviewEditorInputModel>, TelefonReviewEditorInputValidator>();
 builder.Services.AddScoped<IValidator<LoginViewModel>, LoginValidator>();
 builder.Services.AddScoped<IValidator<RegisterViewModel>, RegisterValidator>();
 
@@ -38,6 +40,9 @@ builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
         options.SignIn.RequireConfirmedAccount = false;
+        options.Lockout.AllowedForNewUsers = true;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     })
     .AddEntityFrameworkStores<KiyaslasanaDbContext>()
     .AddDefaultTokenProviders();
@@ -106,23 +111,19 @@ builder.Services.AddOutputCache(options =>
 });
 
 var app = builder.Build();
+var applyMigrationsOnStartup = builder.Configuration.GetValue<bool?>("Database:ApplyMigrationsOnStartup")
+    ?? builder.Environment.IsDevelopment();
 
 app.UseForwardedHeaders();
 
-if (app.Environment.IsDevelopment())
-{
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<KiyaslasanaDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
-else
+if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/hata");
     app.UseStatusCodePagesWithReExecute("/hata/{0}");
     app.UseHsts();
 }
 
-await IdentitySeeder.SeedAsync(app.Services, app.Configuration);
+await InitializePersistenceAsync(app.Services, app.Configuration, applyMigrationsOnStartup);
 
 app.UseHttpsRedirection();
 app.UseResponseCompression();
@@ -173,6 +174,43 @@ app.Run();
 
 public partial class Program
 {
+    private static async Task InitializePersistenceAsync(
+        IServiceProvider services,
+        IConfiguration configuration,
+        bool applyMigrationsOnStartup)
+    {
+        if (applyMigrationsOnStartup)
+        {
+            using var scope = services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<KiyaslasanaDbContext>();
+            await dbContext.Database.MigrateAsync();
+        }
+
+        try
+        {
+            await IdentitySeeder.SeedAsync(services, configuration);
+        }
+        catch (Exception ex) when (!applyMigrationsOnStartup && IsPotentialDatabaseReadinessIssue(ex))
+        {
+            throw new InvalidOperationException(
+                "Identity seed failed because the database schema may be missing. " +
+                "Set 'Database:ApplyMigrationsOnStartup' to true or run migrations before startup.",
+                ex);
+        }
+    }
+
+    private static bool IsPotentialDatabaseReadinessIssue(Exception ex)
+    {
+        if (ex is DbException || ex.InnerException is DbException)
+        {
+            return true;
+        }
+
+        return ex.Message.Contains("Invalid object name", StringComparison.OrdinalIgnoreCase)
+            || ex.Message.Contains("does not exist", StringComparison.OrdinalIgnoreCase)
+            || ex.Message.Contains("no such table", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool TryParseCidr(string cidr, out ForwardedIPNetwork network)
     {
         network = null!;

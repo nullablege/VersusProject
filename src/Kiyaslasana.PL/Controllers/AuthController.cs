@@ -58,11 +58,18 @@ public sealed class AuthController : SeoControllerBase
             model.Email,
             model.Password,
             model.RememberMe,
-            lockoutOnFailure: false);
+            lockoutOnFailure: true);
 
         if (result.Succeeded)
         {
             return Redirect(GetSafeReturnUrl(model.ReturnUrl));
+        }
+
+        if (result.IsLockedOut)
+        {
+            ModelState.AddModelError(string.Empty, "Hesabiniz gecici olarak kilitlendi. Lutfen 15 dakika sonra tekrar deneyin.");
+            SetLoginSeo();
+            return View(model);
         }
 
         ModelState.AddModelError(string.Empty, "Giris bilgileri gecersiz.");
@@ -130,9 +137,15 @@ public sealed class AuthController : SeoControllerBase
         var roleResult = await _userManager.AddToRoleAsync(user, IdentityRoles.Member);
         if (!roleResult.Succeeded)
         {
+            var rollbackResult = await _userManager.DeleteAsync(user);
             foreach (var error in roleResult.Errors)
             {
                 ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            if (!rollbackResult.Succeeded)
+            {
+                ModelState.AddModelError(string.Empty, "Rol atamasi basarisiz oldu ve kullanici rollback islemi tamamlanamadi.");
             }
 
             SetRegisterSeo();

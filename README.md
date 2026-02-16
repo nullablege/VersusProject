@@ -39,6 +39,7 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
 - `/blog` public blog listing
 - `/blog/{slug}` public blog detail
 - `/admin/blog`, `/admin/blog/create`, `/admin/blog/edit/{id}` admin blog management (`Admin` role)
+- `/admin/telefon-inceleme`, `/admin/telefon-inceleme/yeni`, `/admin/telefon-inceleme/duzenle/{slug}` phone review management (`Admin` role)
 - `/giris`, `/kayit-ol`, `/cikis` auth flow (Identity MVC)
 - `/sitemap.xml` sitemap index
 - `/sitemaps/static.xml` static url sitemap page
@@ -62,7 +63,10 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
 - Identity seed:
   - Roles `Admin` and `Member` are seeded idempotently on startup.
   - Optional first admin seed uses `Seed:Enabled`, `Seed:AdminEmail`, `Seed:AdminPassword`.
+  - Startup migration behavior is controlled by `Database:ApplyMigrationsOnStartup`
+    (`true` by default in Development, `false` in production appsettings).
 - EF Core migrations are in `src/Kiyaslasana.DAL/Migrations`.
+- Optional phone review content is stored in `telefon_reviews` and rendered on `/telefon/{slug}` when available.
 - Import tool is available at `tools/Kiyaslasana.Import` (see `docs/IMPORT.md`).
 
 See `docs/SETUP_DB.md` for database initialization.

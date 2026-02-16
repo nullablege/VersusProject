@@ -1,0 +1,70 @@
+﻿@model TelefonReviewAdminListViewModel
+
+<section class="hero" style="padding: var(--space-8) 0;">
+    <div class="container">
+        <h1 class="hero-title" style="font-size: var(--text-h2);">Telefon Incelemeleri</h1>
+        <p class="hero-subtitle" style="margin-bottom: 0;">Slug, marka veya model ile inceleme kayitlarini yonetin.</p>
+    </div>
+</section>
+
+<section class="section" style="padding-top: var(--space-6);">
+    <div class="container">
+        <form method="get" action="/admin/telefon-inceleme" style="display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4);">
+            <input type="text" name="q" value="@Model.Query" placeholder="Slug / Marka / Model" class="search-input" style="max-width: 340px;" />
+            <button type="submit" class="btn btn-secondary">Ara</button>
+            <a href="/admin/telefon-inceleme/yeni" class="btn btn-primary">Yeni Inceleme</a>
+        </form>
+
+        @if (Model.Items.Count == 0)
+        {
+            <p>Inceleme kaydi bulunamadi.</p>
+        }
+        else
+        {
+            <div class="compare-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Telefon</th>
+                            <th>Slug</th>
+                            <th>Inceleme Basligi</th>
+                            <th>Guncelleme</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            var phoneLabel = string.Join(' ', new[] { item.Marka, item.ModelAdi }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+                            <tr>
+                                <td>@(string.IsNullOrWhiteSpace(phoneLabel) ? "-" : phoneLabel)</td>
+                                <td>@item.TelefonSlug</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.ReviewTitle) ? "-" : item.ReviewTitle)</td>
+                                <td>@item.UpdatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td><a class="btn btn-secondary btn-sm" href="/admin/telefon-inceleme/duzenle/@item.TelefonSlug">Duzenle</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="pagination" aria-label="Telefon inceleme sayfalari">
+                    @for (var pageNumber = 1; pageNumber <= Model.TotalPages; pageNumber++)
+                    {
+                        if (pageNumber == Model.Page)
+                        {
+                            <span class="page-btn active" aria-current="page">@pageNumber</span>
+                        }
+                        else
+                        {
+                            var query = string.IsNullOrWhiteSpace(Model.Query) ? string.Empty : $"&q={Uri.EscapeDataString(Model.Query)}";
+                            <a class="page-btn" href="/admin/telefon-inceleme?page=@pageNumber@query">@pageNumber</a>
+                        }
+                    }
+                </nav>
+            }
+        }
+    </div>
+</section>

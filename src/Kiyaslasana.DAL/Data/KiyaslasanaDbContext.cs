@@ -10,6 +10,7 @@ public sealed class KiyaslasanaDbContext : IdentityDbContext<ApplicationUser, Id
 {
     // Change this constant if the existing physical table name differs in production.
     public const string TelefonlarTableName = "telefonlar";
+    public const string TelefonReviewsTableName = "telefon_reviews";
     public const string BlogPostsTableName = "blog_posts";
 
     public KiyaslasanaDbContext(DbContextOptions<KiyaslasanaDbContext> options)
@@ -18,6 +19,7 @@ public sealed class KiyaslasanaDbContext : IdentityDbContext<ApplicationUser, Id
     }
 
     public DbSet<Telefon> Telefonlar => Set<Telefon>();
+    public DbSet<TelefonReview> TelefonReviews => Set<TelefonReview>();
     public DbSet<BlogPost> BlogPosts => Set<BlogPost>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -36,6 +38,29 @@ public sealed class KiyaslasanaDbContext : IdentityDbContext<ApplicationUser, Id
             // Keep exact compatibility for non-standard numeric column names.
             entity.Property(x => x.Ses35MmJack).HasColumnName("ses_3_5mm_jack");
             entity.Property(x => x.Ses35MmJackTr).HasColumnName("ses_3_5mm_jack_tr");
+        });
+
+        builder.Entity<TelefonReview>(entity =>
+        {
+            entity.ToTable(TelefonReviewsTableName);
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.TelefonSlug)
+                .HasMaxLength(TelefonReviewConstraints.TelefonSlugMaxLength)
+                .IsRequired();
+            entity.Property(x => x.Title)
+                .HasMaxLength(TelefonReviewConstraints.TitleMaxLength);
+            entity.Property(x => x.Excerpt)
+                .HasMaxLength(TelefonReviewConstraints.ExcerptMaxLength);
+            entity.Property(x => x.SeoTitle)
+                .HasMaxLength(TelefonReviewConstraints.SeoTitleMaxLength);
+            entity.Property(x => x.SeoDescription)
+                .HasMaxLength(TelefonReviewConstraints.SeoDescriptionMaxLength);
+            entity.Property(x => x.RawContent).IsRequired();
+            entity.Property(x => x.SanitizedContent).IsRequired();
+
+            entity.HasIndex(x => x.TelefonSlug).IsUnique();
+            entity.HasIndex(x => x.UpdatedAt);
         });
 
         builder.Entity<BlogPost>(entity =>

@@ -14,6 +14,7 @@ public static class DependencyInjection
             options.SizeLimit = 5000;
         });
         services.AddScoped<ITelefonService, TelefonService>();
+        services.AddScoped<ITelefonReviewService, TelefonReviewService>();
         services.AddScoped<ITelefonSitemapQuery, TelefonSitemapQuery>();
         services.AddScoped<IBlogPostService, BlogPostService>();
         services.AddSingleton<IAppInfoProvider, AppInfoProvider>();

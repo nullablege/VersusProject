@@ -44,6 +44,20 @@
 </section>
 
 <div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-12);">
+    @if (!string.IsNullOrWhiteSpace(Model.Review?.SanitizedContent))
+    {
+        <section class="spec-section" style="margin-bottom: var(--space-6);">
+            <h2 class="spec-section-title">@(string.IsNullOrWhiteSpace(Model.Review.Title) ? "Inceleme" : Model.Review.Title)</h2>
+            @if (!string.IsNullOrWhiteSpace(Model.Review.Excerpt))
+            {
+                <p class="section-subtitle" style="margin-top: 0;">@Model.Review.Excerpt</p>
+            }
+            <div class="spec-list">
+                @Html.Raw(Model.Review.SanitizedContent)
+            </div>
+        </section>
+    }
+
     <section class="spec-section">
         <h2 class="spec-section-title">Temel Ozellikler</h2>
         <div class="spec-list">
