@@ -23,6 +23,7 @@ public class BlogControllerTests
 
         var view = Assert.IsType<ViewResult>(result);
         var model = Assert.IsType<BlogDetailViewModel>(view.Model);
+        Assert.Contains("<a href=\"/telefon/test-phone\">", model.ContentHtml, StringComparison.Ordinal);
 
         using var doc = JsonDocument.Parse(model.BlogPostingJsonLd);
         Assert.Equal("BlogPosting", doc.RootElement.GetProperty("@type").GetString());
@@ -162,6 +163,17 @@ public class BlogControllerTests
         {
             IReadOnlyList<BlogInternalLink> links = [];
             return Task.FromResult(links);
+        }
+
+        public Task<string> BuildTelefonSlugLinksAsync(string sanitizedHtml, CancellationToken ct)
+        {
+            return Task.FromResult("<p>safe <a href=\"/telefon/test-phone\">test-phone</a></p>");
+        }
+
+        public Task<IReadOnlyList<BlogPost>> GetLatestPublishedMentioningTelefonSlugAsync(string telefonSlug, int take, CancellationToken ct)
+        {
+            IReadOnlyList<BlogPost> posts = [];
+            return Task.FromResult(posts);
         }
     }
 

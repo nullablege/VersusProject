@@ -87,11 +87,13 @@ public sealed class BlogController : SeoControllerBase
         ViewData["TwitterDescription"] = description;
         ViewData["TwitterUrl"] = canonicalUrl;
 
+        var contentHtml = await _blogPostService.BuildTelefonSlugLinksAsync(post.ContentSanitized, ct);
         var links = await _blogPostService.BuildInternalLinksAsync(post, ct);
 
         return View(new BlogDetailViewModel
         {
             Post = post,
+            ContentHtml = contentHtml,
             BlogPostingJsonLd = BuildBlogPostingJsonLd(post, canonicalUrl, description),
             InternalLinks = links
         });

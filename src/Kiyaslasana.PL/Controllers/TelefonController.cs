@@ -27,17 +27,20 @@ public sealed class TelefonController : SeoControllerBase
 
     private readonly ITelefonService _telefonService;
     private readonly ITelefonReviewService _telefonReviewService;
+    private readonly IBlogPostService _blogPostService;
     private readonly ITelefonRepository _telefonRepository;
     private readonly IMemoryCache _memoryCache;
 
     public TelefonController(
         ITelefonService telefonService,
         ITelefonReviewService telefonReviewService,
+        IBlogPostService blogPostService,
         ITelefonRepository telefonRepository,
         IMemoryCache memoryCache)
     {
         _telefonService = telefonService;
         _telefonReviewService = telefonReviewService;
+        _blogPostService = blogPostService;
         _telefonRepository = telefonRepository;
         _memoryCache = memoryCache;
     }
@@ -73,6 +76,7 @@ public sealed class TelefonController : SeoControllerBase
             selectedBrandSlug: null,
             selectedBrand: null,
             popularComparisons: [],
+            filterPopularComparison: null,
             listingTitle: title,
             listingDescription: description);
 
@@ -129,6 +133,7 @@ public sealed class TelefonController : SeoControllerBase
             selectedBrandSlug: normalizedBrandSlug,
             selectedBrand: brand,
             popularComparisons: popularComparisons,
+            filterPopularComparison: null,
             listingTitle: listingTitle,
             listingDescription: listingDescription);
 
@@ -161,6 +166,7 @@ public sealed class TelefonController : SeoControllerBase
 
         var brandMap = await GetBrandSlugMapAsync(ct);
         var basePath = $"/telefonlar/{filter.Slug}";
+        var filterPopularComparison = BuildFilterPopularComparison(items);
         var viewModel = BuildListViewModel(
             items: items,
             totalCount: totalCount,
@@ -172,6 +178,7 @@ public sealed class TelefonController : SeoControllerBase
             selectedBrandSlug: null,
             selectedBrand: null,
             popularComparisons: [],
+            filterPopularComparison: filterPopularComparison,
             listingTitle: filter.Title,
             listingDescription: filter.MetaDescription);
 
@@ -216,6 +223,7 @@ public sealed class TelefonController : SeoControllerBase
 
         ViewData["Nav"] = "telefonlar";
         var compareSuggestions = await GetDetailCompareSuggestionsAsync(normalizedSlug, title, ct);
+        var relatedBlogPosts = await _blogPostService.GetLatestPublishedMentioningTelefonSlugAsync(normalizedSlug, 3, ct);
 
         return View(new TelefonDetailViewModel
         {
@@ -223,7 +231,8 @@ public sealed class TelefonController : SeoControllerBase
             Review = review,
             ProductJsonLd = BuildProductJsonLd(phone, normalizedSlug, schemaDescription, review, reviewBody),
             BreadcrumbJsonLd = BuildBreadcrumbJsonLd(phone, normalizedSlug),
-            CompareSuggestions = compareSuggestions
+            CompareSuggestions = compareSuggestions,
+            RelatedBlogPosts = relatedBlogPosts
         });
     }
 
@@ -388,6 +397,7 @@ public sealed class TelefonController : SeoControllerBase
         string? selectedBrandSlug,
         string? selectedBrand,
         IReadOnlyList<CompareRelatedLinkViewModel> popularComparisons,
+        CompareRelatedLinkViewModel? filterPopularComparison,
         string listingTitle,
         string listingDescription)
     {
@@ -423,7 +433,8 @@ public sealed class TelefonController : SeoControllerBase
             PrevUrl = prevPath,
             NextUrl = nextPath,
             RobotsMeta = page >= 2 ? "noindex,follow" : "index,follow",
-            PopularComparisons = popularComparisons
+            PopularComparisons = popularComparisons,
+            FilterPopularComparison = filterPopularComparison
         };
     }
 
@@ -550,6 +561,33 @@ public sealed class TelefonController : SeoControllerBase
         }
 
         return results;
+    }
+
+    private static CompareRelatedLinkViewModel? BuildFilterPopularComparison(IReadOnlyList<Telefon> items)
+    {
+        var pair = items
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
+            .Take(2)
+            .ToArray();
+
+        if (pair.Length < 2)
+        {
+            return null;
+        }
+
+        var firstSlug = pair[0].Slug!;
+        var secondSlug = pair[1].Slug!;
+        var canonicalLeft = string.Compare(firstSlug, secondSlug, StringComparison.Ordinal) <= 0 ? firstSlug : secondSlug;
+        var canonicalRight = canonicalLeft == firstSlug ? secondSlug : firstSlug;
+        var leftTitle = canonicalLeft == firstSlug ? BuildPhoneTitle(pair[0]) : BuildPhoneTitle(pair[1]);
+        var rightTitle = canonicalRight == secondSlug ? BuildPhoneTitle(pair[1]) : BuildPhoneTitle(pair[0]);
+
+        return new CompareRelatedLinkViewModel
+        {
+            Url = $"/karsilastir/{canonicalLeft}-vs-{canonicalRight}",
+            Title = $"{leftTitle} vs {rightTitle}",
+            ImageUrl = null
+        };
     }
 
     private void SetCacheEntry<T>(string key, T value, MemoryCacheEntryOptions options)

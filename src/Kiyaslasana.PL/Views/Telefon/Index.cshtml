@@ -14,6 +14,21 @@
     }
 }
 
+@if (Model.FilterPopularComparison is not null)
+{
+    <section class="section" style="padding-top: var(--space-6);">
+        <div class="container">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Bu Filtrede Onerilen Karsilastirma</h2>
+                    <p class="section-subtitle">Ilk iki model icin hizli karsilastirma linki</p>
+                </div>
+            </div>
+            <a class="btn btn-secondary btn-sm" href="@Model.FilterPopularComparison.Url">@Model.FilterPopularComparison.Title</a>
+        </div>
+    </section>
+}
+
 @if (Model.Brands.Count > 0)
 {
     <section class="brands-section" style="padding-top: var(--space-6);">

@@ -113,4 +113,37 @@ public sealed class EfBlogPostRepository : IBlogPostRepository
             })
             .ToListAsync(ct);
     }
+
+    public async Task<IReadOnlyList<BlogPost>> GetLatestPublishedMentioningTelefonSlugAsync(string telefonSlug, int take, CancellationToken ct)
+    {
+        var normalizedSlug = (telefonSlug ?? string.Empty).Trim().ToLowerInvariant();
+        var safeTake = Math.Clamp(take, 1, 3);
+
+        if (normalizedSlug.Length == 0)
+        {
+            return [];
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        return await _dbContext.BlogPosts
+            .AsNoTracking()
+            .Where(x => x.IsPublished && x.PublishedAt != null && x.PublishedAt <= now)
+            .Where(x =>
+                x.ContentSanitized.Contains(normalizedSlug) ||
+                (x.Excerpt != null && x.Excerpt.Contains(normalizedSlug)) ||
+                x.Title.Contains(normalizedSlug))
+            .OrderByDescending(x => x.PublishedAt)
+            .ThenByDescending(x => x.Id)
+            .Take(safeTake)
+            .Select(x => new BlogPost
+            {
+                Id = x.Id,
+                Title = x.Title,
+                Slug = x.Slug,
+                Excerpt = x.Excerpt,
+                PublishedAt = x.PublishedAt,
+                UpdatedAt = x.UpdatedAt
+            })
+            .ToListAsync(ct);
+    }
 }

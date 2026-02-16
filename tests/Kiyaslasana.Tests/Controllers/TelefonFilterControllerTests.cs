@@ -91,6 +91,7 @@ public class TelefonFilterControllerTests
         var controller = new TelefonController(
             new StubTelefonService(),
             new StubTelefonReviewService(),
+            new StubBlogPostService(),
             new StubTelefonRepository(),
             new MemoryCache(new MemoryCacheOptions()));
 
@@ -305,6 +306,62 @@ public class TelefonFilterControllerTests
         {
             IReadOnlyList<string> brands = ["TestBrand"];
             return Task.FromResult(brands);
+        }
+    }
+
+    private sealed class StubBlogPostService : IBlogPostService
+    {
+        public Task<(IReadOnlyList<BlogPost> Items, int TotalCount)> GetAdminPagedAsync(int page, int pageSize, CancellationToken ct)
+        {
+            return Task.FromResult(((IReadOnlyList<BlogPost>)[], 0));
+        }
+
+        public Task<BlogPost?> GetAdminByIdAsync(int id, CancellationToken ct)
+        {
+            return Task.FromResult<BlogPost?>(null);
+        }
+
+        public Task<BlogPostUpsertResult> CreateAsync(BlogPostUpsertInput input, CancellationToken ct)
+        {
+            return Task.FromResult(new BlogPostUpsertResult(false, null, null));
+        }
+
+        public Task<BlogPostUpsertResult> UpdateAsync(int id, BlogPostUpsertInput input, CancellationToken ct)
+        {
+            return Task.FromResult(new BlogPostUpsertResult(false, null, null));
+        }
+
+        public Task<(IReadOnlyList<BlogPost> Items, int TotalCount)> GetPublishedPagedAsync(int page, int pageSize, CancellationToken ct)
+        {
+            return Task.FromResult(((IReadOnlyList<BlogPost>)[], 0));
+        }
+
+        public Task<BlogPost?> GetPublishedBySlugAsync(string slug, CancellationToken ct)
+        {
+            return Task.FromResult<BlogPost?>(null);
+        }
+
+        public Task<IReadOnlyList<BlogPost>> GetPublishedSitemapItemsAsync(CancellationToken ct)
+        {
+            IReadOnlyList<BlogPost> items = [];
+            return Task.FromResult(items);
+        }
+
+        public Task<IReadOnlyList<BlogInternalLink>> BuildInternalLinksAsync(BlogPost post, CancellationToken ct)
+        {
+            IReadOnlyList<BlogInternalLink> links = [];
+            return Task.FromResult(links);
+        }
+
+        public Task<string> BuildTelefonSlugLinksAsync(string sanitizedHtml, CancellationToken ct)
+        {
+            return Task.FromResult(sanitizedHtml);
+        }
+
+        public Task<IReadOnlyList<BlogPost>> GetLatestPublishedMentioningTelefonSlugAsync(string telefonSlug, int take, CancellationToken ct)
+        {
+            IReadOnlyList<BlogPost> items = [];
+            return Task.FromResult(items);
         }
     }
 

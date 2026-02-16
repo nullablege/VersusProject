@@ -20,4 +20,8 @@ public interface IBlogPostService
     Task<IReadOnlyList<BlogPost>> GetPublishedSitemapItemsAsync(CancellationToken ct);
 
     Task<IReadOnlyList<BlogInternalLink>> BuildInternalLinksAsync(BlogPost post, CancellationToken ct);
+
+    Task<string> BuildTelefonSlugLinksAsync(string sanitizedHtml, CancellationToken ct);
+
+    Task<IReadOnlyList<BlogPost>> GetLatestPublishedMentioningTelefonSlugAsync(string telefonSlug, int take, CancellationToken ct);
 }

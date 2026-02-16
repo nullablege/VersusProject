@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 using Ganss.Xss;
 using Kiyaslasana.BL.Abstractions;
@@ -6,21 +7,47 @@ using Kiyaslasana.BL.Helpers;
 using Kiyaslasana.BL.SeoFilters;
 using Kiyaslasana.EL.Constants;
 using Kiyaslasana.EL.Entities;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Kiyaslasana.BL.Services;
 
 public sealed class BlogPostService : IBlogPostService
 {
     private const string DefaultAuthorName = "Kiyaslasana Editorial";
+    private const string TelefonSlugCacheKey = "blog:telefon-slug-set:v1";
+    private const string MentionedPostsCacheKeyPrefix = "blog:mentions:v1";
+    private const int TelefonSlugCachePageSize = 4000;
+
+    private static readonly TimeSpan BlogLookupCacheDuration = TimeSpan.FromMinutes(30);
+    private static readonly Regex AnchorTagRegex = new(
+        "(<a\\b[^>]*>.*?</a>)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+    private static readonly Regex HtmlTagSplitRegex = new(
+        "(<[^>]+>)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
+    private static readonly Regex SlugTokenRegex = new(
+        "(?<![a-z0-9-])([a-z0-9]+(?:-[a-z0-9]+)+)(?![a-z0-9-])",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    private static readonly Regex StripHtmlRegex = new(
+        "<.*?>",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
 
     private readonly IBlogPostRepository _blogPostRepository;
     private readonly ITelefonService _telefonService;
+    private readonly ITelefonRepository _telefonRepository;
+    private readonly IMemoryCache _memoryCache;
     private readonly HtmlSanitizer _htmlSanitizer;
 
-    public BlogPostService(IBlogPostRepository blogPostRepository, ITelefonService telefonService)
+    public BlogPostService(
+        IBlogPostRepository blogPostRepository,
+        ITelefonService telefonService,
+        ITelefonRepository telefonRepository,
+        IMemoryCache memoryCache)
     {
         _blogPostRepository = blogPostRepository;
         _telefonService = telefonService;
+        _telefonRepository = telefonRepository;
+        _memoryCache = memoryCache;
         _htmlSanitizer = new HtmlSanitizer();
     }
 
@@ -137,6 +164,49 @@ public sealed class BlogPostService : IBlogPostService
     public Task<IReadOnlyList<BlogPost>> GetPublishedSitemapItemsAsync(CancellationToken ct)
     {
         return _blogPostRepository.GetPublishedSitemapItemsAsync(ct);
+    }
+
+    public async Task<string> BuildTelefonSlugLinksAsync(string sanitizedHtml, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(sanitizedHtml))
+        {
+            return string.Empty;
+        }
+
+        var knownSlugs = await GetKnownTelefonSlugsAsync(ct);
+        if (knownSlugs.Count == 0)
+        {
+            return sanitizedHtml;
+        }
+
+        return LinkTelefonSlugsInContent(sanitizedHtml, knownSlugs);
+    }
+
+    public async Task<IReadOnlyList<BlogPost>> GetLatestPublishedMentioningTelefonSlugAsync(string telefonSlug, int take, CancellationToken ct)
+    {
+        var normalizedSlug = _telefonService.NormalizeSlug(telefonSlug);
+        if (normalizedSlug.Length == 0)
+        {
+            return [];
+        }
+
+        var safeTake = Math.Clamp(take, 1, 3);
+        var cacheKey = $"{MentionedPostsCacheKeyPrefix}:{normalizedSlug}:{safeTake}";
+        if (_memoryCache.TryGetValue<IReadOnlyList<BlogPost>>(cacheKey, out var cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var posts = await _blogPostRepository.GetLatestPublishedMentioningTelefonSlugAsync(normalizedSlug, safeTake, ct);
+        var value = posts ?? [];
+
+        SetCacheEntry(cacheKey, value, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = BlogLookupCacheDuration,
+            Size = 1
+        });
+
+        return value;
     }
 
     public async Task<IReadOnlyList<BlogInternalLink>> BuildInternalLinksAsync(BlogPost post, CancellationToken ct)
@@ -266,7 +336,7 @@ public sealed class BlogPostService : IBlogPostService
             return string.Empty;
         }
 
-        return Regex.Replace(html, "<.*?>", " ");
+        return StripHtmlRegex.Replace(html, " ");
     }
 
     private static bool ContainsPhoneName(string source, Telefon phone)
@@ -284,5 +354,124 @@ public sealed class BlogPostService : IBlogPostService
     private static string BuildPhoneLabel(Telefon phone)
     {
         return string.Join(' ', new[] { phone.Marka, phone.ModelAdi }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+    }
+
+    private async Task<HashSet<string>> GetKnownTelefonSlugsAsync(CancellationToken ct)
+    {
+        if (_memoryCache.TryGetValue<HashSet<string>>(TelefonSlugCacheKey, out var cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var slugCount = await _telefonRepository.CountAsync(ct);
+        if (slugCount <= 0)
+        {
+            return [];
+        }
+
+        var slugSet = new HashSet<string>(StringComparer.Ordinal);
+        for (var skip = 0; skip < slugCount; skip += TelefonSlugCachePageSize)
+        {
+            var page = await _telefonRepository.GetSlugsPageAsync(skip, TelefonSlugCachePageSize, ct);
+            if (page.Count == 0)
+            {
+                break;
+            }
+
+            foreach (var slug in page)
+            {
+                var normalized = _telefonService.NormalizeSlug(slug);
+                if (normalized.Length > 0)
+                {
+                    slugSet.Add(normalized);
+                }
+            }
+        }
+
+        SetCacheEntry(TelefonSlugCacheKey, slugSet, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = BlogLookupCacheDuration,
+            Size = 10
+        });
+
+        return slugSet;
+    }
+
+    private static string LinkTelefonSlugsInContent(string html, IReadOnlySet<string> knownSlugs)
+    {
+        var anchorSegments = AnchorTagRegex.Split(html);
+        if (anchorSegments.Length == 0)
+        {
+            return html;
+        }
+
+        var sb = new StringBuilder(html.Length + 128);
+        foreach (var segment in anchorSegments)
+        {
+            if (segment.Length == 0)
+            {
+                continue;
+            }
+
+            if (segment.StartsWith("<a", StringComparison.OrdinalIgnoreCase))
+            {
+                // Existing anchors are preserved as-is to avoid double wrapping.
+                sb.Append(segment);
+                continue;
+            }
+
+            AppendLinkedTextSegment(sb, segment, knownSlugs);
+        }
+
+        return sb.ToString();
+    }
+
+    private static void AppendLinkedTextSegment(StringBuilder sb, string segment, IReadOnlySet<string> knownSlugs)
+    {
+        var htmlAndTextSegments = HtmlTagSplitRegex.Split(segment);
+        foreach (var htmlOrText in htmlAndTextSegments)
+        {
+            if (htmlOrText.Length == 0)
+            {
+                continue;
+            }
+
+            if (htmlOrText.StartsWith('<'))
+            {
+                sb.Append(htmlOrText);
+                continue;
+            }
+
+            var linkedText = SlugTokenRegex.Replace(
+                htmlOrText,
+                match =>
+                {
+                    var normalized = match.Groups[1].Value.ToLowerInvariant();
+                    if (!knownSlugs.Contains(normalized))
+                    {
+                        return match.Value;
+                    }
+
+                    return $"<a href=\"/telefon/{normalized}\">{match.Value}</a>";
+                });
+
+            sb.Append(linkedText);
+        }
+    }
+
+    private void SetCacheEntry<T>(string key, T value, MemoryCacheEntryOptions options)
+    {
+        try
+        {
+            _memoryCache.Set(key, value, options);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("size", StringComparison.OrdinalIgnoreCase))
+        {
+            _memoryCache.Set(key, value, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = options.AbsoluteExpirationRelativeToNow,
+                SlidingExpiration = options.SlidingExpiration
+            });
+        }
     }
 }

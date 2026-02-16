@@ -19,4 +19,6 @@ public interface IBlogPostRepository
     Task UpdateAsync(BlogPost post, CancellationToken ct);
 
     Task<IReadOnlyList<BlogPost>> GetPublishedSitemapItemsAsync(CancellationToken ct);
+
+    Task<IReadOnlyList<BlogPost>> GetLatestPublishedMentioningTelefonSlugAsync(string telefonSlug, int take, CancellationToken ct);
 }

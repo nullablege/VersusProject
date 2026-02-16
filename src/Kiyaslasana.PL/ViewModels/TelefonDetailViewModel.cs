@@ -9,4 +9,5 @@ public sealed class TelefonDetailViewModel
     public required string ProductJsonLd { get; init; }
     public required string BreadcrumbJsonLd { get; init; }
     public required IReadOnlyList<CompareRelatedLinkViewModel> CompareSuggestions { get; init; }
+    public required IReadOnlyList<BlogPost> RelatedBlogPosts { get; init; }
 }

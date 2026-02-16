@@ -35,6 +35,8 @@ public sealed class TelefonListViewModel
     public required string RobotsMeta { get; init; }
 
     public required IReadOnlyList<CompareRelatedLinkViewModel> PopularComparisons { get; init; }
+
+    public CompareRelatedLinkViewModel? FilterPopularComparison { get; init; }
 }
 
 public sealed class BrandLinkViewModel

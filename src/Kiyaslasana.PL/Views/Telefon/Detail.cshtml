@@ -91,6 +91,24 @@
             </div>
         </section>
     }
+
+    @if (Model.RelatedBlogPosts.Count > 0)
+    {
+        <section class="section" style="padding-top: var(--space-6);">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Bu Telefon Hakkinda Yazilar</h2>
+                    <p class="section-subtitle">Bu modeli anlatan en guncel blog yazilari</p>
+                </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
+                @foreach (var post in Model.RelatedBlogPosts.Where(x => !string.IsNullOrWhiteSpace(x.Slug)))
+                {
+                    <a class="btn btn-secondary btn-sm" href="/blog/@post.Slug">@post.Title</a>
+                }
+            </div>
+        </section>
+    }
 </div>
 
 @section JsonLd {
