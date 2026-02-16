@@ -4,8 +4,11 @@ using Kiyaslasana.BL;
 using Kiyaslasana.DAL;
 using Kiyaslasana.DAL.Data;
 using Kiyaslasana.EL.Entities;
+using Kiyaslasana.PL.Areas.Admin.Models;
+using Kiyaslasana.PL.Areas.Admin.Validators;
 using Kiyaslasana.PL.Infrastructure;
 using FluentValidation.AspNetCore;
+using FluentValidation;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -23,6 +26,7 @@ builder.Services.Configure<RouteOptions>(options =>
 });
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddScoped<IValidator<BlogPostEditorInputModel>, BlogPostEditorInputValidator>();
 
 builder.Services.AddBusinessLayer();
 builder.Services.AddDataAccessLayer(builder.Configuration);

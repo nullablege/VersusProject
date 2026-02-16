@@ -1,0 +1,43 @@
+@model BlogDetailViewModel
+
+<section class="hero" style="padding: var(--space-8) 0;">
+    <div class="container">
+        <h1 class="hero-title" style="font-size: var(--text-h2);">@Model.Post.Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Post.Excerpt))
+        {
+            <p class="hero-subtitle" style="margin-bottom: 0;">@Model.Post.Excerpt</p>
+        }
+    </div>
+</section>
+
+<section class="section" style="padding-top: var(--space-6);">
+    <div class="container">
+        <article class="spec-section">
+            <div class="spec-list">
+                @Html.Raw(Model.Post.ContentSanitized)
+            </div>
+        </article>
+
+        @if (Model.InternalLinks.Count > 0)
+        {
+            <section class="section" style="padding-top: var(--space-6);">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Ilgili Baglantilar</h2>
+                        <p class="section-subtitle">Yazi icerigine gore onerilen telefon ve karsilastirma sayfalari</p>
+                    </div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
+                    @foreach (var link in Model.InternalLinks)
+                    {
+                        <a class="btn btn-secondary btn-sm" href="@link.Url">@link.Label</a>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+</section>
+
+@section JsonLd {
+<script type="application/ld+json">@Html.Raw(Model.BlogPostingJsonLd)</script>
+}

@@ -11,10 +11,12 @@ public sealed class SitemapController : SeoControllerBase
     private const int TelefonSitemapPageSize = 40000;
 
     private readonly ITelefonSitemapQuery _telefonSitemapQuery;
+    private readonly IBlogPostService _blogPostService;
 
-    public SitemapController(ITelefonSitemapQuery telefonSitemapQuery)
+    public SitemapController(ITelefonSitemapQuery telefonSitemapQuery, IBlogPostService blogPostService)
     {
         _telefonSitemapQuery = telefonSitemapQuery;
+        _blogPostService = blogPostService;
     }
 
     [HttpGet("/sitemap.xml")]
@@ -32,6 +34,8 @@ public sealed class SitemapController : SeoControllerBase
             new XElement(ns + "loc", $"{baseUrl}/sitemaps/static.xml")));
         sitemapIndex.Add(new XElement(ns + "sitemap",
             new XElement(ns + "loc", $"{baseUrl}/sitemaps/markalar.xml")));
+        sitemapIndex.Add(new XElement(ns + "sitemap",
+            new XElement(ns + "loc", $"{baseUrl}/sitemaps/blog.xml")));
 
         for (var page = 1; page <= totalPages; page++)
         {
@@ -53,7 +57,35 @@ public sealed class SitemapController : SeoControllerBase
         var urlset = new XElement(ns + "urlset",
             new XElement(ns + "url", new XElement(ns + "loc", baseUrl + "/")),
             new XElement(ns + "url", new XElement(ns + "loc", baseUrl + "/telefonlar")),
+            new XElement(ns + "url", new XElement(ns + "loc", baseUrl + "/blog")),
             new XElement(ns + "url", new XElement(ns + "loc", baseUrl + "/karsilastir")));
+
+        var doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), urlset);
+        return Content(doc.ToString(SaveOptions.DisableFormatting), "application/xml; charset=utf-8");
+    }
+
+    [HttpGet("/sitemaps/blog.xml")]
+    [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneDay)]
+    public async Task<IActionResult> BlogSitemap(CancellationToken ct)
+    {
+        var baseUrl = GetBaseUrl();
+        var posts = await _blogPostService.GetPublishedSitemapItemsAsync(ct);
+
+        XNamespace ns = "http://www.sitemaps.org/schemas/sitemap/0.9";
+        var urlset = new XElement(ns + "urlset");
+
+        foreach (var post in posts.Where(x => !string.IsNullOrWhiteSpace(x.Slug)))
+        {
+            var url = new XElement(ns + "url",
+                new XElement(ns + "loc", $"{baseUrl}/blog/{post.Slug}"));
+
+            if (post.UpdatedAt != default)
+            {
+                url.Add(new XElement(ns + "lastmod", post.UpdatedAt.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ")));
+            }
+
+            urlset.Add(url);
+        }
 
         var doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), urlset);
         return Content(doc.ToString(SaveOptions.DisableFormatting), "application/xml; charset=utf-8");

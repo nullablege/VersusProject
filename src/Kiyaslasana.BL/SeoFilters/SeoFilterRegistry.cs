@@ -71,4 +71,9 @@ public static class SeoFilterRegistry
 
         return Filters.TryGetValue(slug.Trim().ToLowerInvariant(), out definition!);
     }
+
+    public static IReadOnlyList<SeoFilterDefinition> GetAll()
+    {
+        return Filters.Values.ToArray();
+    }
 }

@@ -1,0 +1,68 @@
+﻿@model BlogAdminListViewModel
+
+<section class="hero" style="padding: var(--space-8) 0;">
+    <div class="container">
+        <h1 class="hero-title" style="font-size: var(--text-h2);">Admin Blog</h1>
+        <p class="hero-subtitle" style="margin-bottom: 0;">Yazi yonetimi ve yayinlama paneli.</p>
+    </div>
+</section>
+
+<section class="section" style="padding-top: var(--space-6);">
+    <div class="container">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: var(--space-4);">
+            <a class="btn btn-primary" href="/admin/blog/create">Yeni Yazi</a>
+        </div>
+
+        @if (Model.Items.Count == 0)
+        {
+            <p>Henüz blog yazisi yok.</p>
+        }
+        else
+        {
+            <div class="compare-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Baslik</th>
+                            <th>Slug</th>
+                            <th>Durum</th>
+                            <th>Guncelleme</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var post in Model.Items)
+                        {
+                            <tr>
+                                <td>@post.Id</td>
+                                <td>@post.Title</td>
+                                <td>@post.Slug</td>
+                                <td>@(post.IsPublished ? "Yayinda" : "Taslak")</td>
+                                <td>@post.UpdatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td><a class="btn btn-secondary btn-sm" href="/admin/blog/edit/@post.Id">Duzenle</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="pagination" aria-label="Admin blog sayfalari">
+                    @for (var pageNumber = 1; pageNumber <= Model.TotalPages; pageNumber++)
+                    {
+                        if (pageNumber == Model.Page)
+                        {
+                            <span class="page-btn active" aria-current="page">@pageNumber</span>
+                        }
+                        else
+                        {
+                            <a class="page-btn" href="/admin/blog?page=@pageNumber">@pageNumber</a>
+                        }
+                    }
+                </nav>
+            }
+        }
+    </div>
+</section>

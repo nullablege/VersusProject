@@ -1,0 +1,79 @@
+@model BlogListViewModel
+
+<section class="hero" style="padding: var(--space-8) 0;">
+    <div class="container">
+        <h1 class="hero-title" style="font-size: var(--text-h2);">Blog</h1>
+        <p class="hero-subtitle" style="margin-bottom: 0;">
+            Telefon dunyasina dair rehberler, incelemeler ve karsilastirma odakli icerikler.
+        </p>
+    </div>
+</section>
+
+<section class="section" style="padding-top: var(--space-6);">
+    <div class="container">
+        @if (Model.Items.Count == 0)
+        {
+            <p>Yayinlanmis blog yazisi bulunamadi.</p>
+        }
+        else
+        {
+            <div class="products-grid">
+                @foreach (var post in Model.Items)
+                {
+                    <article class="product-card">
+                        <div class="product-info">
+                            <p class="product-brand">Blog</p>
+                            <h2 class="product-name">
+                                <a href="/blog/@post.Slug">@post.Title</a>
+                            </h2>
+                            <p>@post.Excerpt</p>
+                            <div class="product-footer">
+                                <small>@post.PublishedAt?.ToString("dd.MM.yyyy")</small>
+                                <a class="btn btn-secondary btn-sm" href="/blog/@post.Slug">Devamini Oku</a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                var startPage = Math.Max(1, Model.Page - 2);
+                var endPage = Math.Min(Model.TotalPages, Model.Page + 2);
+
+                <nav class="pagination" aria-label="Blog sayfalari">
+                    @if (Model.PrevUrl is null)
+                    {
+                        <span class="page-btn" aria-disabled="true">Onceki</span>
+                    }
+                    else
+                    {
+                        <a class="page-btn" href="@Model.PrevUrl" rel="prev">Onceki</a>
+                    }
+
+                    @for (var pageNumber = startPage; pageNumber <= endPage; pageNumber++)
+                    {
+                        if (pageNumber == Model.Page)
+                        {
+                            <span class="page-btn active" aria-current="page">@pageNumber</span>
+                        }
+                        else
+                        {
+                            var pageUrl = pageNumber <= 1 ? "/blog" : $"/blog?page={pageNumber}";
+                            <a class="page-btn" href="@pageUrl">@pageNumber</a>
+                        }
+                    }
+
+                    @if (Model.NextUrl is null)
+                    {
+                        <span class="page-btn" aria-disabled="true">Sonraki</span>
+                    }
+                    else
+                    {
+                        <a class="page-btn" href="@Model.NextUrl" rel="next">Sonraki</a>
+                    }
+                </nav>
+            }
+        }
+    </div>
+</section>

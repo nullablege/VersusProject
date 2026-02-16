@@ -18,6 +18,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<ITelefonRepository, EfTelefonRepository>();
+        services.AddScoped<IBlogPostRepository, EfBlogPostRepository>();
 
         return services;
     }

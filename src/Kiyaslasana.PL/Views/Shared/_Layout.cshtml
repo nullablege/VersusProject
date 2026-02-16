@@ -64,6 +64,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/versus/styles.css" asp-append-version="true" />
+    @RenderSection("HeadExtras", required: false)
 </head>
 <body>
     <a href="#main-content" class="sr-only skip-to-content">Ana icerige atla</a>
@@ -79,6 +80,7 @@
                 <nav class="main-nav" aria-label="Ana navigasyon">
                     <a href="/" class="nav-item @Active("home")"><span>Ana Sayfa</span></a>
                     <a href="/telefonlar" class="nav-item @Active("telefonlar")"><span>Telefonlar</span></a>
+                    <a href="/blog" class="nav-item @Active("blog")"><span>Blog</span></a>
                     <a href="/karsilastir" class="nav-item @Active("karsilastir")"><span>Karsilastir</span></a>
                 </nav>
 
@@ -97,6 +99,7 @@
         <nav class="sub-nav">
             <div class="container sub-nav-inner">
                 <a href="/telefonlar" class="@Active("telefonlar")">Tum Telefonlar</a>
+                <a href="/blog" class="@Active("blog")">Blog</a>
                 <a href="/karsilastir" class="@Active("karsilastir")">Karsilastir</a>
                 <a href="/sitemap.xml">Sitemap</a>
             </div>
@@ -123,6 +126,7 @@
                     <h4 class="footer-title">Kesfet</h4>
                     <ul class="footer-links">
                         <li><a href="/telefonlar">Tum Telefonlar</a></li>
+                        <li><a href="/blog">Blog</a></li>
                         <li><a href="/sitemap.xml">Sitemap</a></li>
                     </ul>
                 </div>
@@ -143,6 +147,7 @@
     </footer>
 
     <script src="~/versus/script.js" asp-append-version="true"></script>
+    @RenderSection("Scripts", required: false)
     @RenderSection("JsonLd", required: false)
 </body>
 </html>

@@ -15,6 +15,7 @@ public static class DependencyInjection
         });
         services.AddScoped<ITelefonService, TelefonService>();
         services.AddScoped<ITelefonSitemapQuery, TelefonSitemapQuery>();
+        services.AddScoped<IBlogPostService, BlogPostService>();
         services.AddSingleton<IAppInfoProvider, AppInfoProvider>();
 
         return services;

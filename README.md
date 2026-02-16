@@ -36,8 +36,12 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
 - `/karsilastir` compare builder entry
 - `/karsilastir/{slug1}-vs-{slug2}` SEO indexable compare page
 - `/karsilastir/{slug1}-vs-{slug2}-vs-{slug3}(-vs-{slug4})` functional compare page (`noindex,follow`)
+- `/blog` public blog listing
+- `/blog/{slug}` public blog detail
+- `/admin/blog`, `/admin/blog/create`, `/admin/blog/edit/{id}` admin blog management (`Admin` role)
 - `/sitemap.xml` sitemap index
 - `/sitemaps/static.xml` static url sitemap page
+- `/sitemaps/blog.xml` blog post sitemap page
 - `/sitemaps/telefonlar-{page}.xml` paged phone sitemap pages
 - `/robots.txt` robots with sitemap pointer
 - `/system/info` lightweight info endpoint
