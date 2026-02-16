@@ -85,6 +85,25 @@
                 </nav>
 
                 <div class="header-actions">
+                    @if (User.Identity?.IsAuthenticated ?? false)
+                    {
+                        if (User.IsInRole("Admin"))
+                        {
+                            <a href="/admin/blog" class="header-btn">Admin Blog</a>
+                        }
+
+                        <form method="post" action="/cikis" style="display: inline-block; margin: 0;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                            <button type="submit" class="header-btn">Cikis</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a href="/giris" class="header-btn">Giris</a>
+                        <a href="/kayit-ol" class="header-btn">Kayit</a>
+                    }
+
                     <button class="header-btn mobile-menu-btn" aria-label="Menu">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="3" y1="12" x2="21" y2="12" />

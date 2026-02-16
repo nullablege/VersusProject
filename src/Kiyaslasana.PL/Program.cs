@@ -6,6 +6,8 @@ using Kiyaslasana.DAL.Data;
 using Kiyaslasana.EL.Entities;
 using Kiyaslasana.PL.Areas.Admin.Models;
 using Kiyaslasana.PL.Areas.Admin.Validators;
+using Kiyaslasana.PL.ViewModels.Auth;
+using Kiyaslasana.PL.Validators.Auth;
 using Kiyaslasana.PL.Infrastructure;
 using FluentValidation.AspNetCore;
 using FluentValidation;
@@ -27,6 +29,8 @@ builder.Services.Configure<RouteOptions>(options =>
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddScoped<IValidator<BlogPostEditorInputModel>, BlogPostEditorInputValidator>();
+builder.Services.AddScoped<IValidator<LoginViewModel>, LoginValidator>();
+builder.Services.AddScoped<IValidator<RegisterViewModel>, RegisterValidator>();
 
 builder.Services.AddBusinessLayer();
 builder.Services.AddDataAccessLayer(builder.Configuration);
@@ -110,15 +114,6 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<KiyaslasanaDbContext>();
     await dbContext.Database.MigrateAsync();
-
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    foreach (var roleName in new[] { "Admin", "Member" })
-    {
-        if (!await roleManager.RoleExistsAsync(roleName))
-        {
-            await roleManager.CreateAsync(new IdentityRole(roleName));
-        }
-    }
 }
 else
 {
@@ -126,6 +121,8 @@ else
     app.UseStatusCodePagesWithReExecute("/hata/{0}");
     app.UseHsts();
 }
+
+await IdentitySeeder.SeedAsync(app.Services, app.Configuration);
 
 app.UseHttpsRedirection();
 app.UseResponseCompression();

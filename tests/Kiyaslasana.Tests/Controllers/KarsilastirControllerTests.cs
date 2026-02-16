@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Security.Claims;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.BL.Contracts;
 using Kiyaslasana.EL.Entities;
@@ -14,6 +15,38 @@ namespace Kiyaslasana.Tests.Controllers;
 
 public class KarsilastirControllerTests
 {
+    [Fact]
+    public async Task Index_Guest_AllowsTwoSlots()
+    {
+        var controller = new KarsilastirController(new StubTelefonService());
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = BuildHttpContext()
+        };
+
+        var result = await controller.Index(first: null, CancellationToken.None);
+
+        var viewResult = Assert.IsType<ViewResult>(result);
+        var model = Assert.IsType<CompareBuilderViewModel>(viewResult.Model);
+        Assert.Equal(2, model.MaxAllowed);
+    }
+
+    [Fact]
+    public async Task Index_MemberRole_AllowsFourSlots()
+    {
+        var controller = new KarsilastirController(new StubTelefonService());
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = BuildHttpContext("Member")
+        };
+
+        var result = await controller.Index(first: null, CancellationToken.None);
+
+        var viewResult = Assert.IsType<ViewResult>(result);
+        var model = Assert.IsType<CompareBuilderViewModel>(viewResult.Model);
+        Assert.Equal(4, model.MaxAllowed);
+    }
+
     [Fact]
     public async Task CompareTwo_ProducesParsableJsonLd()
     {
@@ -38,7 +71,7 @@ public class KarsilastirControllerTests
         Assert.Equal(2, itemListJson.RootElement.GetProperty("itemListElement").GetArrayLength());
     }
 
-    private static HttpContext BuildHttpContext()
+    private static HttpContext BuildHttpContext(params string[] roles)
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -58,6 +91,12 @@ public class KarsilastirControllerTests
         };
         httpContext.Request.Scheme = "http";
         httpContext.Request.Host = new HostString("spoofed.invalid");
+        if (roles.Length > 0)
+        {
+            var claims = new List<Claim> { new(ClaimTypes.Name, "test-user") };
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+            httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
+        }
 
         return httpContext;
     }

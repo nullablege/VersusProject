@@ -1,0 +1,40 @@
+﻿@model Kiyaslasana.PL.ViewModels.Auth.LoginViewModel
+
+<section class="hero" style="padding: var(--space-8) 0;">
+    <div class="container">
+        <h1 class="hero-title" style="font-size: var(--text-h2);">Giris</h1>
+        <p class="hero-subtitle" style="margin-bottom: 0;">Hesabinizla devam edin.</p>
+    </div>
+</section>
+
+<section class="section" style="padding-top: var(--space-6); padding-bottom: var(--space-8);">
+    <div class="container">
+        <div class="compare-section" style="max-width: 520px; padding: var(--space-6);">
+            <form method="post" action="/giris" style="display: grid; gap: var(--space-3);">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+                <div asp-validation-summary="All" class="text-danger"></div>
+
+                <div>
+                    <label asp-for="Email">E-posta</label>
+                    <input asp-for="Email" class="search-input" style="width: 100%;" autocomplete="email" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Password">Sifre</label>
+                    <input asp-for="Password" type="password" class="search-input" style="width: 100%;" autocomplete="current-password" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <label style="display: inline-flex; align-items: center; gap: var(--space-2);">
+                    <input asp-for="RememberMe" /> Beni hatirla
+                </label>
+
+                <button type="submit" class="btn btn-primary">Giris Yap</button>
+                <p style="margin: 0;">Hesabin yok mu? <a href="/kayit-ol">Kayit ol</a></p>
+            </form>
+        </div>
+    </div>
+</section>

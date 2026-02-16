@@ -39,6 +39,7 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
 - `/blog` public blog listing
 - `/blog/{slug}` public blog detail
 - `/admin/blog`, `/admin/blog/create`, `/admin/blog/edit/{id}` admin blog management (`Admin` role)
+- `/giris`, `/kayit-ol`, `/cikis` auth flow (Identity MVC)
 - `/sitemap.xml` sitemap index
 - `/sitemaps/static.xml` static url sitemap page
 - `/sitemaps/blog.xml` blog post sitemap page
@@ -56,8 +57,11 @@ dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
   - `rel=prev` / `rel=next` link tags are emitted when applicable.
 - Compare requests are rendered in normalized order without redirect.
 - Compare URL format is `slug1-vs-slug2[-vs-slug3-vs-slug4]`.
-- Guest compare limit: 2 phones, authenticated compare limit: 4 phones (server-side enforced).
+- Guest compare limit: 2 phones, `Member`/`Admin` compare limit: 4 phones (server-side enforced).
 - OutputCache is enabled for anonymous GET pages with route-based variation.
+- Identity seed:
+  - Roles `Admin` and `Member` are seeded idempotently on startup.
+  - Optional first admin seed uses `Seed:Enabled`, `Seed:AdminEmail`, `Seed:AdminPassword`.
 - EF Core migrations are in `src/Kiyaslasana.DAL/Migrations`.
 - Import tool is available at `tools/Kiyaslasana.Import` (see `docs/IMPORT.md`).
 

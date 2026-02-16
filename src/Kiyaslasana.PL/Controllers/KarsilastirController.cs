@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.PL.Infrastructure;
 using Kiyaslasana.PL.ViewModels;
@@ -18,8 +18,9 @@ public sealed class KarsilastirController : SeoControllerBase
     [HttpGet("/karsilastir")]
     public async Task<IActionResult> Index([FromQuery] string? first, CancellationToken ct)
     {
+        var isPrivileged = IsPrivilegedCompareUser();
         var viewModel = await BuildBuilderViewModelAsync(
-            isAuthenticated: User.Identity?.IsAuthenticated ?? false,
+            isPrivileged: isPrivileged,
             requestedSlugs: string.IsNullOrWhiteSpace(first) ? [] : [_telefonService.NormalizeSlug(first)],
             ct);
 
@@ -37,8 +38,8 @@ public sealed class KarsilastirController : SeoControllerBase
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Index([FromForm] string[] slugs, CancellationToken ct)
     {
-        var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
-        var maxAllowed = isAuthenticated ? 4 : 2;
+        var isPrivileged = IsPrivilegedCompareUser();
+        var maxAllowed = isPrivileged ? 4 : 2;
 
         var normalized = new List<string>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -69,7 +70,7 @@ public sealed class KarsilastirController : SeoControllerBase
 
         if (!ModelState.IsValid)
         {
-            var viewModel = await BuildBuilderViewModelAsync(isAuthenticated, normalized, ct);
+            var viewModel = await BuildBuilderViewModelAsync(isPrivileged, normalized, ct);
             SetSeo(
                 title: "Telefon Karsilastirma Builder",
                 description: "Karsilastirmak istedigin telefon sluglarini sec ve karsilastirma sayfasina git.",
@@ -104,8 +105,8 @@ public sealed class KarsilastirController : SeoControllerBase
 
     private async Task<IActionResult> RenderCompareAsync(IReadOnlyList<string> slugs, bool isSeoIndexable, CancellationToken ct)
     {
-        var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
-        var resolve = await _telefonService.ResolveCompareAsync(slugs, isAuthenticated, ct);
+        var isPrivileged = IsPrivilegedCompareUser();
+        var resolve = await _telefonService.ResolveCompareAsync(slugs, isPrivileged, ct);
 
         if (!resolve.IsValid)
         {
@@ -159,11 +160,11 @@ public sealed class KarsilastirController : SeoControllerBase
     }
 
     private async Task<CompareBuilderViewModel> BuildBuilderViewModelAsync(
-        bool isAuthenticated,
+        bool isPrivileged,
         IReadOnlyList<string> requestedSlugs,
         CancellationToken ct)
     {
-        var maxAllowed = isAuthenticated ? 4 : 2;
+        var maxAllowed = isPrivileged ? 4 : 2;
         var slots = Enumerable.Repeat(string.Empty, maxAllowed).ToArray();
 
         for (var i = 0; i < Math.Min(requestedSlugs.Count, maxAllowed); i++)
@@ -178,6 +179,10 @@ public sealed class KarsilastirController : SeoControllerBase
             SlugInputs = slots,
             SuggestedPhones = suggestions
         };
+    }
+    private bool IsPrivilegedCompareUser()
+    {
+        return User.IsInRole(IdentityRoles.Admin) || User.IsInRole(IdentityRoles.Member);
     }
 
     private static string BuildPhoneTitle(Kiyaslasana.EL.Entities.Telefon phone)
@@ -311,3 +316,5 @@ public sealed class KarsilastirController : SeoControllerBase
         return $"{currentTitle} vs {comparedTitle}";
     }
 }
+
+
