@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using System.Text.Json;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.BL.Contracts;
 using Kiyaslasana.EL.Entities;
@@ -36,6 +37,20 @@ public class TelefonDetailControllerTests
         Assert.NotNull(model.Review);
         Assert.Equal("Review SEO Title", controller.ViewData["Title"]);
         Assert.Equal("Review SEO Description", controller.ViewData["MetaDescription"]);
+
+        using var json = JsonDocument.Parse(model.ProductJsonLd);
+        Assert.Equal("https://schema.org", json.RootElement.GetProperty("@context").GetString());
+        Assert.Equal("Product", json.RootElement.GetProperty("@type").GetString());
+        Assert.Equal("Phone", json.RootElement.GetProperty("name").GetString());
+        Assert.Equal("Test", json.RootElement.GetProperty("brand").GetProperty("name").GetString());
+        Assert.Equal("https://kiyaslasana.com/telefon/test-phone", json.RootElement.GetProperty("url").GetString());
+        Assert.Equal("Review SEO Description", json.RootElement.GetProperty("description").GetString());
+        Assert.Equal("test-phone", json.RootElement.GetProperty("sku").GetString());
+
+        var review = json.RootElement.GetProperty("review");
+        Assert.Equal("Review", review.GetProperty("@type").GetString());
+        Assert.Equal("safe", review.GetProperty("reviewBody").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(review.GetProperty("datePublished").GetString()));
     }
 
     private static HttpContext BuildHttpContext()

@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Net;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.BL.Helpers;
 using Kiyaslasana.BL.SeoFilters;
@@ -196,6 +198,7 @@ public sealed class TelefonController : SeoControllerBase
         var seoDescription = !string.IsNullOrWhiteSpace(review?.SeoDescription)
             ? review.SeoDescription
             : $"{title} teknik ozellikleri, fiyat bilgisi ve karsilastirma detaylari.";
+        var schemaDescription = !string.IsNullOrWhiteSpace(seoDescription) ? seoDescription : review?.Excerpt;
 
         SetSeo(
             title: seoTitle!,
@@ -209,7 +212,7 @@ public sealed class TelefonController : SeoControllerBase
         {
             Telefon = phone,
             Review = review,
-            ProductJsonLd = BuildProductJsonLd(phone, normalizedSlug),
+            ProductJsonLd = BuildProductJsonLd(phone, normalizedSlug, schemaDescription, review),
             BreadcrumbJsonLd = BuildBreadcrumbJsonLd(phone, normalizedSlug),
             CompareSuggestions = compareSuggestions
         });
@@ -220,32 +223,59 @@ public sealed class TelefonController : SeoControllerBase
         return string.Join(' ', new[] { phone.Marka, phone.ModelAdi }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
     }
 
-    private string BuildProductJsonLd(Telefon phone, string slug)
+    private string BuildProductJsonLd(
+        Telefon phone,
+        string slug,
+        string? description,
+        TelefonReview? review)
     {
-        var title = BuildPhoneTitle(phone);
-        var data = new
+        var modelName = string.IsNullOrWhiteSpace(phone.ModelAdi) ? BuildPhoneTitle(phone) : phone.ModelAdi;
+        var data = new Dictionary<string, object?>
         {
-            @context = "https://schema.org",
-            @type = "Product",
-            name = title,
-            image = phone.ResimUrl,
-            brand = new
+            ["@context"] = "https://schema.org",
+            ["@type"] = "Product",
+            ["name"] = modelName,
+            ["brand"] = new Dictionary<string, object?>
             {
-                @type = "Brand",
-                name = phone.Marka
+                ["@type"] = "Brand",
+                ["name"] = phone.Marka
             },
-            sku = phone.Slug,
-            offers = new
-            {
-                @type = "Offer",
-                priceCurrency = "TRY",
-                price = phone.Fiyat,
-                availability = "https://schema.org/InStock",
-                url = BuildAbsoluteUrl($"/telefon/{slug}")
-            }
+            ["url"] = BuildAbsoluteUrl($"/telefon/{slug}"),
+            ["description"] = description,
+            ["sku"] = slug
         };
 
+        var reviewBody = BuildReviewBodyForSchema(review?.SanitizedContent);
+        if (!string.IsNullOrWhiteSpace(reviewBody) && review is not null && review.CreatedAt != default)
+        {
+            data["review"] = new Dictionary<string, object?>
+            {
+                ["@type"] = "Review",
+                ["reviewBody"] = reviewBody,
+                ["datePublished"] = review.CreatedAt.UtcDateTime.ToString("O")
+            };
+        }
+
         return JsonSerializer.Serialize(data);
+    }
+
+    private static string? BuildReviewBodyForSchema(string? sanitizedContent)
+    {
+        if (string.IsNullOrWhiteSpace(sanitizedContent))
+        {
+            return null;
+        }
+
+        var withoutHtml = Regex.Replace(sanitizedContent, "<.*?>", " ");
+        var decoded = WebUtility.HtmlDecode(withoutHtml);
+        var compact = Regex.Replace(decoded, "\\s+", " ").Trim();
+
+        if (compact.Length == 0)
+        {
+            return null;
+        }
+
+        return compact.Length <= 300 ? compact : compact[..300];
     }
 
     private string BuildBreadcrumbJsonLd(Telefon phone, string slug)
