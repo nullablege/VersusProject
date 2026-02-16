@@ -27,6 +27,23 @@ dotnet test Kiyaslasana.sln
 dotnet run --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
 ```
 
+## Secure DB Config
+
+Never commit database passwords or any secret values. Treat any committed password as compromised and rotate it.
+
+Development with user-secrets:
+
+```bash
+dotnet user-secrets init --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
+dotnet user-secrets set "ConnectionStrings:Default" "<real connection string>" --project src/Kiyaslasana.PL/Kiyaslasana.PL.csproj
+```
+
+Environment variable (all environments):
+
+```bash
+ConnectionStrings__Default="<real connection string>"
+```
+
 ## Key Routes
 
 - `/` home
