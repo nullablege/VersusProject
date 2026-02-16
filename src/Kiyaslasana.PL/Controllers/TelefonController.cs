@@ -22,6 +22,8 @@ public sealed class TelefonController : SeoControllerBase
     private static readonly TimeSpan BrandSlugMapCacheDuration = TimeSpan.FromHours(24);
     private static readonly TimeSpan BrandPopularCompareCacheDuration = TimeSpan.FromMinutes(20);
     private static readonly TimeSpan DetailCompareCacheDuration = TimeSpan.FromHours(1);
+    private static readonly Regex HtmlTagRegex = new("<.*?>", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.CultureInvariant);
+    private static readonly Regex WsRegex = new("\\s+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private readonly ITelefonService _telefonService;
     private readonly ITelefonReviewService _telefonReviewService;
@@ -198,7 +200,14 @@ public sealed class TelefonController : SeoControllerBase
         var seoDescription = !string.IsNullOrWhiteSpace(review?.SeoDescription)
             ? review.SeoDescription
             : $"{title} teknik ozellikleri, fiyat bilgisi ve karsilastirma detaylari.";
-        var schemaDescription = !string.IsNullOrWhiteSpace(seoDescription) ? seoDescription : review?.Excerpt;
+        var reviewBody = BuildReviewBodyForSchema(review?.SanitizedContent);
+        var schemaDescription = !string.IsNullOrWhiteSpace(review?.SeoDescription)
+            ? review.SeoDescription
+            : !string.IsNullOrWhiteSpace(review?.Excerpt)
+                ? review.Excerpt
+                : !string.IsNullOrWhiteSpace(reviewBody)
+                    ? reviewBody
+                    : seoDescription;
 
         SetSeo(
             title: seoTitle!,
@@ -212,7 +221,7 @@ public sealed class TelefonController : SeoControllerBase
         {
             Telefon = phone,
             Review = review,
-            ProductJsonLd = BuildProductJsonLd(phone, normalizedSlug, schemaDescription, review),
+            ProductJsonLd = BuildProductJsonLd(phone, normalizedSlug, schemaDescription, review, reviewBody),
             BreadcrumbJsonLd = BuildBreadcrumbJsonLd(phone, normalizedSlug),
             CompareSuggestions = compareSuggestions
         });
@@ -227,7 +236,8 @@ public sealed class TelefonController : SeoControllerBase
         Telefon phone,
         string slug,
         string? description,
-        TelefonReview? review)
+        TelefonReview? review,
+        string? reviewBody)
     {
         var modelName = string.IsNullOrWhiteSpace(phone.ModelAdi) ? BuildPhoneTitle(phone) : phone.ModelAdi;
         var data = new Dictionary<string, object?>
@@ -245,7 +255,6 @@ public sealed class TelefonController : SeoControllerBase
             ["sku"] = slug
         };
 
-        var reviewBody = BuildReviewBodyForSchema(review?.SanitizedContent);
         if (!string.IsNullOrWhiteSpace(reviewBody) && review is not null && review.CreatedAt != default)
         {
             data["review"] = new Dictionary<string, object?>
@@ -266,9 +275,9 @@ public sealed class TelefonController : SeoControllerBase
             return null;
         }
 
-        var withoutHtml = Regex.Replace(sanitizedContent, "<.*?>", " ");
+        var withoutHtml = HtmlTagRegex.Replace(sanitizedContent, " ");
         var decoded = WebUtility.HtmlDecode(withoutHtml);
-        var compact = Regex.Replace(decoded, "\\s+", " ").Trim();
+        var compact = WsRegex.Replace(decoded, " ").Trim();
 
         if (compact.Length == 0)
         {

@@ -17,18 +17,9 @@ namespace Kiyaslasana.Tests.Controllers;
 public class TelefonDetailControllerTests
 {
     [Fact]
-    public async Task Detail_WhenReviewExists_UsesReviewSeoAndSetsReviewModel()
+    public async Task Detail_WhenReviewHasSeoDescription_UsesReviewSeoForMetaAndJsonLd()
     {
-        var controller = new TelefonController(
-            new StubTelefonService(),
-            new StubTelefonReviewService(),
-            new StubTelefonRepository(),
-            new MemoryCache(new MemoryCacheOptions()));
-
-        controller.ControllerContext = new ControllerContext
-        {
-            HttpContext = BuildHttpContext()
-        };
+        var controller = CreateController();
 
         var result = await controller.Detail("test-phone", CancellationToken.None);
 
@@ -51,6 +42,50 @@ public class TelefonDetailControllerTests
         Assert.Equal("Review", review.GetProperty("@type").GetString());
         Assert.Equal("safe", review.GetProperty("reviewBody").GetString());
         Assert.False(string.IsNullOrWhiteSpace(review.GetProperty("datePublished").GetString()));
+    }
+
+    [Fact]
+    public async Task Detail_WhenSeoDescriptionMissing_UsesExcerptForJsonLdDescription()
+    {
+        var controller = CreateController();
+
+        var result = await controller.Detail("excerpt-phone", CancellationToken.None);
+
+        var view = Assert.IsType<ViewResult>(result);
+        var model = Assert.IsType<TelefonDetailViewModel>(view.Model);
+        using var json = JsonDocument.Parse(model.ProductJsonLd);
+
+        Assert.Equal("Excerpt Description", json.RootElement.GetProperty("description").GetString());
+    }
+
+    [Fact]
+    public async Task Detail_WhenSeoAndExcerptMissing_UsesDerivedReviewBodyForJsonLdDescription()
+    {
+        var controller = CreateController();
+
+        var result = await controller.Detail("body-phone", CancellationToken.None);
+
+        var view = Assert.IsType<ViewResult>(result);
+        var model = Assert.IsType<TelefonDetailViewModel>(view.Model);
+        using var json = JsonDocument.Parse(model.ProductJsonLd);
+
+        Assert.Equal("Derived Review Body & More", json.RootElement.GetProperty("description").GetString());
+    }
+
+    private static TelefonController CreateController()
+    {
+        var controller = new TelefonController(
+            new StubTelefonService(),
+            new StubTelefonReviewService(),
+            new StubTelefonRepository(),
+            new MemoryCache(new MemoryCacheOptions()));
+
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = BuildHttpContext()
+        };
+
+        return controller;
     }
 
     private static HttpContext BuildHttpContext()
@@ -79,6 +114,8 @@ public class TelefonDetailControllerTests
 
     private sealed class StubTelefonService : ITelefonService
     {
+        private static readonly HashSet<string> KnownSlugs = ["test-phone", "excerpt-phone", "body-phone"];
+
         public string NormalizeSlug(string? slug)
         {
             return (slug ?? string.Empty).Trim().ToLowerInvariant();
@@ -96,14 +133,14 @@ public class TelefonDetailControllerTests
 
         public Task<Telefon?> GetBySlugAsync(string slug, CancellationToken ct)
         {
-            if (slug != "test-phone")
+            if (!KnownSlugs.Contains(slug))
             {
                 return Task.FromResult<Telefon?>(null);
             }
 
             return Task.FromResult<Telefon?>(new Telefon
             {
-                Slug = "test-phone",
+                Slug = slug,
                 Marka = "Test",
                 ModelAdi = "Phone",
                 Fiyat = "100"
@@ -137,23 +174,55 @@ public class TelefonDetailControllerTests
     {
         public Task<TelefonReview?> GetByTelefonSlugAsync(string slug, CancellationToken ct)
         {
-            if (slug != "test-phone")
+            if (slug == "test-phone")
             {
-                return Task.FromResult<TelefonReview?>(null);
+                return Task.FromResult<TelefonReview?>(new TelefonReview
+                {
+                    TelefonSlug = "test-phone",
+                    Title = "Inceleme",
+                    Excerpt = "Ozet",
+                    RawContent = "<p>raw</p>",
+                    SanitizedContent = "<p>safe</p>",
+                    SeoTitle = "Review SEO Title",
+                    SeoDescription = "Review SEO Description",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                });
             }
 
-            return Task.FromResult<TelefonReview?>(new TelefonReview
+            if (slug == "excerpt-phone")
             {
-                TelefonSlug = "test-phone",
-                Title = "Inceleme",
-                Excerpt = "Ozet",
-                RawContent = "<p>raw</p>",
-                SanitizedContent = "<p>safe</p>",
-                SeoTitle = "Review SEO Title",
-                SeoDescription = "Review SEO Description",
-                CreatedAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow
-            });
+                return Task.FromResult<TelefonReview?>(new TelefonReview
+                {
+                    TelefonSlug = "excerpt-phone",
+                    Title = "Inceleme",
+                    Excerpt = "Excerpt Description",
+                    RawContent = "<p>raw</p>",
+                    SanitizedContent = "<p>safe</p>",
+                    SeoTitle = "Review SEO Title",
+                    SeoDescription = null,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                });
+            }
+
+            if (slug == "body-phone")
+            {
+                return Task.FromResult<TelefonReview?>(new TelefonReview
+                {
+                    TelefonSlug = "body-phone",
+                    Title = "Inceleme",
+                    Excerpt = null,
+                    RawContent = "<p>raw</p>",
+                    SanitizedContent = "<p>Derived <strong>Review</strong> Body &amp; More</p>",
+                    SeoTitle = "Review SEO Title",
+                    SeoDescription = null,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                });
+            }
+
+            return Task.FromResult<TelefonReview?>(null);
         }
 
         public Task<TelefonReviewUpsertResult> UpsertAsync(string slug, TelefonReviewUpsertInput input, CancellationToken ct)
