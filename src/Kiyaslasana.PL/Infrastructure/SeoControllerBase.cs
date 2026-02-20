@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Net.Http.Headers;
 
 namespace Kiyaslasana.PL.Infrastructure;
 
@@ -37,6 +38,12 @@ public abstract class SeoControllerBase : Controller
         var combinedPath = CombinePathSegments(pathBase, safeRelativePath);
 
         return $"{baseUrl}{combinedPath}";
+    }
+
+    protected void SetPublicCacheControl(int maxAgeSeconds)
+    {
+        var safeMaxAgeSeconds = Math.Max(maxAgeSeconds, 0);
+        Response.Headers[HeaderNames.CacheControl] = $"public, max-age={safeMaxAgeSeconds}";
     }
 
     private static string? NormalizePublicBaseUrl(string? publicBaseUrl)

@@ -3,21 +3,26 @@ using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.PL.Infrastructure;
 using Kiyaslasana.PL.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kiyaslasana.PL.Controllers;
 
 public sealed class KarsilastirController : SeoControllerBase
 {
     private readonly ITelefonService _telefonService;
+    private readonly ILogger<KarsilastirController> _logger;
 
-    public KarsilastirController(ITelefonService telefonService)
+    public KarsilastirController(ITelefonService telefonService, ILogger<KarsilastirController>? logger = null)
     {
         _telefonService = telefonService;
+        _logger = logger ?? NullLogger<KarsilastirController>.Instance;
     }
 
     [HttpGet("/karsilastir")]
     public async Task<IActionResult> Index([FromQuery] string? first, CancellationToken ct)
     {
+        _logger.LogInformation("Compare builder request with first slug {FirstSlug}", first);
         var isPrivileged = IsPrivilegedCompareUser();
         var viewModel = await BuildBuilderViewModelAsync(
             isPrivileged: isPrivileged,
@@ -38,6 +43,7 @@ public sealed class KarsilastirController : SeoControllerBase
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Index([FromForm] string[] slugs, CancellationToken ct)
     {
+        _logger.LogInformation("Compare submit request with {SlugCount} slugs", slugs.Length);
         var isPrivileged = IsPrivilegedCompareUser();
         var maxAllowed = isPrivileged ? 4 : 2;
 
@@ -105,6 +111,7 @@ public sealed class KarsilastirController : SeoControllerBase
 
     private async Task<IActionResult> RenderCompareAsync(IReadOnlyList<string> slugs, bool isSeoIndexable, CancellationToken ct)
     {
+        _logger.LogInformation("Compare page request for slugs {Slugs} with indexable {IsSeoIndexable}", string.Join("|", slugs), isSeoIndexable);
         var isPrivileged = IsPrivilegedCompareUser();
         var resolve = await _telefonService.ResolveCompareAsync(slugs, isPrivileged, ct);
 
@@ -127,6 +134,7 @@ public sealed class KarsilastirController : SeoControllerBase
 
         if (!requestedOrder.SequenceEqual(resolve.CanonicalSlugs, StringComparer.Ordinal))
         {
+            _logger.LogInformation("Compare request redirected to canonical order {CanonicalSlugs}", string.Join("|", resolve.CanonicalSlugs));
             return RedirectPermanent($"{Request.PathBase}{canonicalPath}");
         }
 
@@ -151,6 +159,7 @@ public sealed class KarsilastirController : SeoControllerBase
         var currentPhoneTitles = resolve.Phones
             .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
             .ToDictionary(x => x.Slug!, BuildPhoneTitle, StringComparer.Ordinal);
+        SetPublicCacheControl(600);
 
         return View("~/Views/Compare/Compare.cshtml", new CompareViewModel
         {

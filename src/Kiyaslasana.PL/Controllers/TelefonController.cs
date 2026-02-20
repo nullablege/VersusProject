@@ -11,6 +11,8 @@ using Kiyaslasana.PL.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kiyaslasana.PL.Controllers;
 
@@ -31,19 +33,22 @@ public sealed class TelefonController : SeoControllerBase
     private readonly IBlogPostService _blogPostService;
     private readonly ITelefonRepository _telefonRepository;
     private readonly IMemoryCache _memoryCache;
+    private readonly ILogger<TelefonController> _logger;
 
     public TelefonController(
         ITelefonService telefonService,
         ITelefonReviewService telefonReviewService,
         IBlogPostService blogPostService,
         ITelefonRepository telefonRepository,
-        IMemoryCache memoryCache)
+        IMemoryCache memoryCache,
+        ILogger<TelefonController>? logger = null)
     {
         _telefonService = telefonService;
         _telefonReviewService = telefonReviewService;
         _blogPostService = blogPostService;
         _telefonRepository = telefonRepository;
         _memoryCache = memoryCache;
+        _logger = logger ?? NullLogger<TelefonController>.Instance;
     }
 
     [HttpGet("/telefonlar")]
@@ -155,6 +160,8 @@ public sealed class TelefonController : SeoControllerBase
         VaryByQueryKeys = ["page"])]
     public async Task<IActionResult> ByFilter(string filterSlug, [FromQuery] int page = 1, CancellationToken ct = default)
     {
+        _logger.LogInformation("Telefon filter request for {FilterSlug} page {Page}", filterSlug, page);
+
         if (page < 1)
         {
             return NotFound();
@@ -201,10 +208,12 @@ public sealed class TelefonController : SeoControllerBase
     public async Task<IActionResult> Detail(string slug, CancellationToken ct)
     {
         var normalizedSlug = _telefonService.NormalizeSlug(slug);
+        _logger.LogInformation("Telefon detail request for slug {Slug}", normalizedSlug);
         var phone = await _telefonService.GetBySlugAsync(normalizedSlug, ct);
 
         if (phone is null)
         {
+            _logger.LogWarning("Telefon detail not found for slug {Slug}", normalizedSlug);
             return NotFound();
         }
 
@@ -233,6 +242,7 @@ public sealed class TelefonController : SeoControllerBase
         var similarPhones = await _telefonService.GetSimilarPhonesAsync(normalizedSlug, 4, ct);
         var topComparedLinks = await GetDetailTopComparedLinksAsync(normalizedSlug, title, ct);
         var relatedBlogPosts = await _blogPostService.GetLatestPublishedMentioningTelefonSlugAsync(normalizedSlug, 3, ct);
+        SetPublicCacheControl(600);
 
         return View(new TelefonDetailViewModel
         {
