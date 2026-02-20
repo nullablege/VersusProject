@@ -35,7 +35,7 @@ public sealed class BlogController : SeoControllerBase
 
         if (paging.Page != page)
         {
-            return RedirectPermanent(BuildListingPath(basePath, paging.Page));
+            return RedirectPermanentWithPublicCache(BuildListingPath(basePath, paging.Page));
         }
 
         var canonicalPath = BuildListingPath(basePath, paging.Page);

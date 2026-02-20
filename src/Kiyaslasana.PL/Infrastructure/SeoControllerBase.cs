@@ -46,6 +46,12 @@ public abstract class SeoControllerBase : Controller
         Response.Headers[HeaderNames.CacheControl] = $"public, max-age={safeMaxAgeSeconds}";
     }
 
+    protected IActionResult RedirectPermanentWithPublicCache(string url, int maxAgeSeconds = 600)
+    {
+        SetPublicCacheControl(maxAgeSeconds);
+        return RedirectPermanent(url);
+    }
+
     private static string? NormalizePublicBaseUrl(string? publicBaseUrl)
     {
         if (string.IsNullOrWhiteSpace(publicBaseUrl))

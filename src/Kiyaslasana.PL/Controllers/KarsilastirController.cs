@@ -135,7 +135,7 @@ public sealed class KarsilastirController : SeoControllerBase
         if (!requestedOrder.SequenceEqual(resolve.CanonicalSlugs, StringComparer.Ordinal))
         {
             _logger.LogInformation("Compare request redirected to canonical order {CanonicalSlugs}", string.Join("|", resolve.CanonicalSlugs));
-            return RedirectPermanent($"{Request.PathBase}{canonicalPath}");
+            return RedirectPermanentWithPublicCache($"{Request.PathBase}{canonicalPath}");
         }
 
         var canonicalUrl = BuildAbsoluteUrl(canonicalPath);

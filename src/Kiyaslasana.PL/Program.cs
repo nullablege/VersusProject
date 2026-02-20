@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Net.Http.Headers;
 using ForwardedIPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
@@ -115,13 +116,14 @@ var applyMigrationsOnStartup = builder.Configuration.GetValue<bool?>("Database:A
     ?? builder.Environment.IsDevelopment();
 
 app.UseForwardedHeaders();
+app.UseExceptionHandler("/error");
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/hata");
-    app.UseStatusCodePagesWithReExecute("/hata/{0}");
     app.UseHsts();
 }
+
+app.UseStatusCodePagesWithReExecute("/error/{0}");
 
 await InitializePersistenceAsync(app.Services, app.Configuration, applyMigrationsOnStartup);
 
@@ -165,6 +167,52 @@ app.Use(async (context, next) =>
 
 app.MapRazorPages();
 app.MapControllers();
+
+app.MapGet("/health", async Task<IResult> (
+    KiyaslasanaDbContext dbContext,
+    IMemoryCache memoryCache,
+    CancellationToken ct) =>
+{
+    var databaseHealthy = false;
+    try
+    {
+        databaseHealthy = await dbContext.Database.CanConnectAsync(ct);
+    }
+    catch
+    {
+        databaseHealthy = false;
+    }
+
+    var memoryCacheHealthy = false;
+    try
+    {
+        const string healthCacheKey = "health:memory-cache:v1";
+        memoryCache.Set(healthCacheKey, "ok", TimeSpan.FromSeconds(30));
+        memoryCacheHealthy = memoryCache.TryGetValue<string>(healthCacheKey, out var value)
+            && string.Equals(value, "ok", StringComparison.Ordinal);
+    }
+    catch
+    {
+        memoryCacheHealthy = false;
+    }
+
+    var allHealthy = databaseHealthy && memoryCacheHealthy;
+    var response = new
+    {
+        status = allHealthy ? "Healthy" : "Unhealthy",
+        checks = new Dictionary<string, string>
+        {
+            ["database"] = databaseHealthy ? "Healthy" : "Unhealthy",
+            ["memory_cache"] = memoryCacheHealthy ? "Healthy" : "Unhealthy"
+        }
+    };
+
+    return Results.Json(
+        response,
+        statusCode: allHealthy
+            ? StatusCodes.Status200OK
+            : StatusCodes.Status503ServiceUnavailable);
+});
 
 app.MapControllerRoute(
     name: "default",

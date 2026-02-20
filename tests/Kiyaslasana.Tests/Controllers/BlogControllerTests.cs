@@ -68,6 +68,7 @@ public class BlogControllerTests
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.True(redirect.Permanent);
         Assert.Equal("/blog?page=3", redirect.Url);
+        Assert.Equal("public, max-age=600", controller.Response.Headers.CacheControl.ToString());
     }
 
     private static BlogController CreateController(IBlogPostService? blogPostService = null)

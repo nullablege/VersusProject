@@ -85,6 +85,7 @@ public class KarsilastirControllerTests
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.True(redirect.Permanent);
         Assert.Equal("/karsilastir/alpha-vs-zeta", redirect.Url);
+        Assert.Equal("public, max-age=600", controller.Response.Headers.CacheControl.ToString());
     }
 
     private static HttpContext BuildHttpContext(params string[] roles)
