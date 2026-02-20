@@ -117,6 +117,7 @@ public sealed class EfBlogPostRepository : IBlogPostRepository
     public async Task<IReadOnlyList<BlogPost>> GetLatestPublishedMentioningTelefonSlugAsync(string telefonSlug, int take, CancellationToken ct)
     {
         var normalizedSlug = (telefonSlug ?? string.Empty).Trim().ToLowerInvariant();
+        var likePattern = $"%{normalizedSlug}%";
         var safeTake = Math.Clamp(take, 1, 3);
 
         if (normalizedSlug.Length == 0)
@@ -129,9 +130,9 @@ public sealed class EfBlogPostRepository : IBlogPostRepository
             .AsNoTracking()
             .Where(x => x.IsPublished && x.PublishedAt != null && x.PublishedAt <= now)
             .Where(x =>
-                x.ContentSanitized.Contains(normalizedSlug) ||
-                (x.Excerpt != null && x.Excerpt.Contains(normalizedSlug)) ||
-                x.Title.Contains(normalizedSlug))
+                EF.Functions.Like(x.ContentSanitized, likePattern) ||
+                (x.Excerpt != null && EF.Functions.Like(x.Excerpt, likePattern)) ||
+                EF.Functions.Like(x.Title, likePattern))
             .OrderByDescending(x => x.PublishedAt)
             .ThenByDescending(x => x.Id)
             .Take(safeTake)
