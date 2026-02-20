@@ -14,6 +14,7 @@ public sealed class TelefonService : ITelefonService
     private const string RelatedLinksCacheKeyPrefix = "telefon:compare:related-links:v1";
     private const string DetailSimilarCacheKeyPrefix = "telefon:detail:similar:v1";
     private const string DetailTopComparedCacheKeyPrefix = "telefon:detail:top-compares:v1";
+    private const string GlobalTopComparedCacheKeyPrefix = "telefon:compare:top:v1";
 
     private static readonly Regex CacheableSlugRegex = new(
         $"^[a-z0-9-]{{1,{TelefonConstraints.SlugMaxLength}}}$",
@@ -24,13 +25,19 @@ public sealed class TelefonService : ITelefonService
     private static readonly TimeSpan RelatedCandidatesCacheDuration = TimeSpan.FromHours(1);
     private static readonly TimeSpan RelatedLinksCacheDuration = TimeSpan.FromHours(1);
     private static readonly TimeSpan DetailHubCacheDuration = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan TopComparedCacheDuration = TimeSpan.FromMinutes(15);
 
     private readonly ITelefonRepository _telefonRepository;
+    private readonly ICompareVisitRepository _compareVisitRepository;
     private readonly IMemoryCache _memoryCache;
 
-    public TelefonService(ITelefonRepository telefonRepository, IMemoryCache memoryCache)
+    public TelefonService(
+        ITelefonRepository telefonRepository,
+        ICompareVisitRepository compareVisitRepository,
+        IMemoryCache memoryCache)
     {
         _telefonRepository = telefonRepository;
+        _compareVisitRepository = compareVisitRepository;
         _memoryCache = memoryCache;
     }
 
@@ -243,18 +250,72 @@ public sealed class TelefonService : ITelefonService
             return cached;
         }
 
-        var relatedLinks = await GetRelatedComparisonLinksAsync([normalizedSlug], perSlug: 12, totalMax: 24, ct);
-        var value = relatedLinks
-            .GroupBy(x => $"{x.CanonicalLeftSlug}|{x.CanonicalRightSlug}", StringComparer.Ordinal)
-            .Select(x => x.First())
-            .OrderBy(x => x.CanonicalLeftSlug, StringComparer.Ordinal)
-            .ThenBy(x => x.CanonicalRightSlug, StringComparer.Ordinal)
+        var topPairs = await _compareVisitRepository.GetTopComparedBySlugAsync(normalizedSlug, take: 24, ct);
+        var value = topPairs
+            .Select(x =>
+            {
+                var otherSlug = x.SlugLeft == normalizedSlug ? x.SlugRight : x.SlugLeft;
+                return new RelatedComparisonLink(
+                    CurrentSlug: normalizedSlug,
+                    OtherSlug: otherSlug,
+                    CanonicalLeftSlug: x.SlugLeft,
+                    CanonicalRightSlug: x.SlugRight,
+                    UrlPath: $"/karsilastir/{x.SlugLeft}-vs-{x.SlugRight}",
+                    OtherTitle: otherSlug,
+                    OtherImageUrl: null);
+            })
             .Take(safeTake)
             .ToArray();
 
         SetCacheEntry(cacheKey, (IReadOnlyList<RelatedComparisonLink>)value, new MemoryCacheEntryOptions
         {
-            AbsoluteExpirationRelativeToNow = DetailHubCacheDuration,
+            AbsoluteExpirationRelativeToNow = TopComparedCacheDuration,
+            Size = 1
+        });
+
+        return value;
+    }
+
+    public async Task RecordCompareVisitAsync(string slugLeft, string slugRight, string? ipHash, CancellationToken ct)
+    {
+        var normalizedLeft = NormalizeSlug(slugLeft);
+        var normalizedRight = NormalizeSlug(slugRight);
+
+        if (!IsCacheableSlug(normalizedLeft) || !IsCacheableSlug(normalizedRight))
+        {
+            return;
+        }
+
+        if (string.Equals(normalizedLeft, normalizedRight, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var canonicalLeft = string.Compare(normalizedLeft, normalizedRight, StringComparison.Ordinal) <= 0
+            ? normalizedLeft
+            : normalizedRight;
+        var canonicalRight = canonicalLeft == normalizedLeft ? normalizedRight : normalizedLeft;
+        var normalizedIpHash = string.IsNullOrWhiteSpace(ipHash) ? null : ipHash.Trim();
+
+        await _compareVisitRepository.AddVisitAsync(canonicalLeft, canonicalRight, DateTimeOffset.UtcNow, normalizedIpHash, ct);
+    }
+
+    public async Task<IReadOnlyList<TopComparedPair>> GetTopComparedAsync(int take, CancellationToken ct)
+    {
+        var safeTake = Math.Clamp(take, 1, 100);
+        var cacheKey = $"{GlobalTopComparedCacheKeyPrefix}:{safeTake}";
+
+        if (_memoryCache.TryGetValue<IReadOnlyList<TopComparedPair>>(cacheKey, out var cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var topCompared = await _compareVisitRepository.GetTopComparedAsync(safeTake, ct);
+        var value = topCompared ?? [];
+
+        SetCacheEntry(cacheKey, value, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TopComparedCacheDuration,
             Size = 1
         });
 

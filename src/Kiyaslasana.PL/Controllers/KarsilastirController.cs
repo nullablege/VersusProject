@@ -1,8 +1,10 @@
-﻿using System.Text.Json;
+using System.Text.Json;
+using System.Security.Cryptography;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.PL.Infrastructure;
 using Kiyaslasana.PL.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -11,11 +13,16 @@ namespace Kiyaslasana.PL.Controllers;
 public sealed class KarsilastirController : SeoControllerBase
 {
     private readonly ITelefonService _telefonService;
+    private readonly IServiceScopeFactory? _scopeFactory;
     private readonly ILogger<KarsilastirController> _logger;
 
-    public KarsilastirController(ITelefonService telefonService, ILogger<KarsilastirController>? logger = null)
+    public KarsilastirController(
+        ITelefonService telefonService,
+        IServiceScopeFactory? scopeFactory = null,
+        ILogger<KarsilastirController>? logger = null)
     {
         _telefonService = telefonService;
+        _scopeFactory = scopeFactory;
         _logger = logger ?? NullLogger<KarsilastirController>.Instance;
     }
 
@@ -159,6 +166,7 @@ public sealed class KarsilastirController : SeoControllerBase
         var currentPhoneTitles = resolve.Phones
             .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
             .ToDictionary(x => x.Slug!, BuildPhoneTitle, StringComparer.Ordinal);
+        EnqueueCompareVisit(resolve.CanonicalSlugs);
         SetPublicCacheControl(600);
 
         return View("~/Views/Compare/Compare.cshtml", new CompareViewModel
@@ -335,6 +343,58 @@ public sealed class KarsilastirController : SeoControllerBase
         var comparedTitle = string.IsNullOrWhiteSpace(otherTitle) ? otherSlug : otherTitle;
         return $"{currentTitle} vs {comparedTitle}";
     }
+
+    private void EnqueueCompareVisit(IReadOnlyList<string> canonicalSlugs)
+    {
+        if (canonicalSlugs.Count != 2)
+        {
+            return;
+        }
+
+        var slugLeft = canonicalSlugs[0];
+        var slugRight = canonicalSlugs[1];
+        if (slugLeft.Length == 0 || slugRight.Length == 0)
+        {
+            return;
+        }
+
+        var scopeFactory = _scopeFactory ?? HttpContext?.RequestServices.GetService<IServiceScopeFactory>();
+        if (scopeFactory is null)
+        {
+            return;
+        }
+
+        var remoteIp = HttpContext?.Connection.RemoteIpAddress?.ToString();
+        var ipHash = BuildIpHash(remoteIp);
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var telefonService = scope.ServiceProvider.GetRequiredService<ITelefonService>();
+                await telefonService.RecordCompareVisitAsync(slugLeft, slugRight, ipHash, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to record compare visit for {SlugLeft}|{SlugRight}", slugLeft, slugRight);
+            }
+        });
+    }
+
+    private static string? BuildIpHash(string? ipAddress)
+    {
+        if (string.IsNullOrWhiteSpace(ipAddress))
+        {
+            return null;
+        }
+
+        var ipBytes = System.Text.Encoding.UTF8.GetBytes(ipAddress.Trim());
+        var hashBytes = SHA256.HashData(ipBytes);
+        return Convert.ToHexString(hashBytes);
+    }
 }
+
+
 
 

@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<ITelefonRepository, EfTelefonRepository>();
         services.AddScoped<ITelefonReviewRepository, EfTelefonReviewRepository>();
         services.AddScoped<IBlogPostRepository, EfBlogPostRepository>();
+        services.AddScoped<ICompareVisitRepository, EfCompareVisitRepository>();
 
         return services;
     }

@@ -1,4 +1,5 @@
 using Kiyaslasana.BL.Abstractions;
+using Kiyaslasana.BL.Contracts;
 using Kiyaslasana.BL.Services;
 using Kiyaslasana.EL.Entities;
 using Microsoft.Extensions.Caching.Memory;
@@ -125,7 +126,10 @@ public class TelefonServiceTests
 
     private static TelefonService CreateService(StubTelefonRepository? repository = null)
     {
-        return new TelefonService(repository ?? new StubTelefonRepository(), new MemoryCache(new MemoryCacheOptions()));
+        return new TelefonService(
+            repository ?? new StubTelefonRepository(),
+            new StubCompareVisitRepository(),
+            new MemoryCache(new MemoryCacheOptions()));
     }
 
     private sealed class StubTelefonRepository : ITelefonRepository
@@ -214,6 +218,37 @@ public class TelefonServiceTests
             ];
 
             return Task.FromResult((IReadOnlyList<Telefon>)list.Take(Math.Clamp(take, 1, 8)).ToArray());
+        }
+    }
+
+    private sealed class StubCompareVisitRepository : ICompareVisitRepository
+    {
+        public Task AddVisitAsync(string slugLeft, string slugRight, DateTimeOffset visitedAt, string? ipHash, CancellationToken ct)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyList<TopComparedPair>> GetTopComparedAsync(int take, CancellationToken ct)
+        {
+            IReadOnlyList<TopComparedPair> list =
+            [
+                new("alpha", "delta", 10),
+                new("alpha", "epsilon", 8),
+                new("beta", "gamma", 6),
+                new("alpha", "zeta", 4)
+            ];
+            return Task.FromResult((IReadOnlyList<TopComparedPair>)list.Take(Math.Clamp(take, 1, 100)).ToArray());
+        }
+
+        public Task<IReadOnlyList<TopComparedPair>> GetTopComparedBySlugAsync(string slug, int take, CancellationToken ct)
+        {
+            IReadOnlyList<TopComparedPair> list =
+            [
+                new(slug, "delta", 10),
+                new(slug, "epsilon", 8),
+                new(slug, "zeta", 4)
+            ];
+            return Task.FromResult((IReadOnlyList<TopComparedPair>)list.Take(Math.Clamp(take, 1, 100)).ToArray());
         }
     }
 }

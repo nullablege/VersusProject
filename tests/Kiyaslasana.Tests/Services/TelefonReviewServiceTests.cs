@@ -132,6 +132,17 @@ public class TelefonReviewServiceTests
             return Task.FromResult(list);
         }
 
+        public Task RecordCompareVisitAsync(string slugLeft, string slugRight, string? ipHash, CancellationToken ct)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyList<TopComparedPair>> GetTopComparedAsync(int take, CancellationToken ct)
+        {
+            IReadOnlyList<TopComparedPair> list = [];
+            return Task.FromResult(list);
+        }
+
         public Task<IReadOnlyList<RelatedComparisonLink>> GetTopComparedLinksAsync(string slug, int take, CancellationToken ct)
         {
             IReadOnlyList<RelatedComparisonLink> list = [];

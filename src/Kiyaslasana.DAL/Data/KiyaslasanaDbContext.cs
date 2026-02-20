@@ -12,6 +12,7 @@ public sealed class KiyaslasanaDbContext : IdentityDbContext<ApplicationUser, Id
     public const string TelefonlarTableName = "telefonlar";
     public const string TelefonReviewsTableName = "telefon_reviews";
     public const string BlogPostsTableName = "blog_posts";
+    public const string CompareVisitsTableName = "compare_visits";
 
     public KiyaslasanaDbContext(DbContextOptions<KiyaslasanaDbContext> options)
         : base(options)
@@ -21,6 +22,7 @@ public sealed class KiyaslasanaDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<Telefon> Telefonlar => Set<Telefon>();
     public DbSet<TelefonReview> TelefonReviews => Set<TelefonReview>();
     public DbSet<BlogPost> BlogPosts => Set<BlogPost>();
+    public DbSet<CompareVisit> CompareVisits => Set<CompareVisit>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -85,6 +87,26 @@ public sealed class KiyaslasanaDbContext : IdentityDbContext<ApplicationUser, Id
 
             entity.HasIndex(x => x.Slug).IsUnique();
             entity.HasIndex(x => x.PublishedAt);
+        });
+
+        builder.Entity<CompareVisit>(entity =>
+        {
+            entity.ToTable(CompareVisitsTableName);
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.SlugLeft)
+                .HasMaxLength(CompareVisitConstraints.SlugMaxLength)
+                .IsRequired();
+            entity.Property(x => x.SlugRight)
+                .HasMaxLength(CompareVisitConstraints.SlugMaxLength)
+                .IsRequired();
+            entity.Property(x => x.IPHash)
+                .HasMaxLength(CompareVisitConstraints.IpHashMaxLength);
+            entity.Property(x => x.VisitedAt)
+                .IsRequired();
+
+            entity.HasIndex(x => new { x.SlugLeft, x.SlugRight, x.VisitedAt });
+            entity.HasIndex(x => x.VisitedAt);
         });
     }
 }
