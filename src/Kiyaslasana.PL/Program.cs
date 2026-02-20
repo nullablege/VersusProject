@@ -129,6 +129,29 @@ else
 
 app.UseStatusCodePagesWithReExecute("/error/{0}");
 
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers.TryAdd("X-Content-Type-Options", "nosniff");
+        context.Response.Headers.TryAdd("X-Frame-Options", "SAMEORIGIN");
+        context.Response.Headers.TryAdd("Referrer-Policy", "strict-origin-when-cross-origin");
+        context.Response.Headers.TryAdd("Permissions-Policy", "geolocation=(), camera=(), microphone=()");
+
+        // Keep CSP baseline strict while allowing current inline scripts/styles and hosted assets used by the UI.
+        const string csp = "default-src 'self'; " +
+            "script-src 'self' 'unsafe-inline'; " +
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+            "img-src 'self' data: https:; " +
+            "font-src 'self' data: https://fonts.gstatic.com";
+        context.Response.Headers.TryAdd("Content-Security-Policy", csp);
+
+        return Task.CompletedTask;
+    });
+
+    await next();
+});
+
 await InitializePersistenceAsync(app.Services, app.Configuration, applyMigrationsOnStartup);
 
 app.UseHttpsRedirection();
