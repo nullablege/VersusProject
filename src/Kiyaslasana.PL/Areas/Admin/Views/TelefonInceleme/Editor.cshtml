@@ -2,6 +2,7 @@
 @model TelefonReviewAdminEditorViewModel
 @{
     var initialContentJson = JsonSerializer.Serialize(Model.Input.RawContent ?? string.Empty);
+    var cspNonce = ViewData["CspNonce"] as string;
 }
 
 @section HeadExtras {
@@ -86,8 +87,8 @@
 </section>
 
 @section Scripts {
-<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
-<script>
+<script nonce="@cspNonce" src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+<script nonce="@cspNonce">
 (function () {
     const input = document.getElementById('input-raw-content');
     const editorElement = document.getElementById('quill-editor');

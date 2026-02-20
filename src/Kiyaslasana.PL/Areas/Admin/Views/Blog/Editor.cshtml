@@ -4,6 +4,7 @@
     var formAction = Model.Id.HasValue ? $"/admin/blog/edit/{Model.Id.Value}" : "/admin/blog/create";
     var initialContentJson = JsonSerializer.Serialize(Model.Input.ContentRaw ?? string.Empty);
     var publishedAtValue = Model.Input.PublishedAt?.ToString("yyyy-MM-ddTHH:mm");
+    var cspNonce = ViewData["CspNonce"] as string;
 }
 
 @section HeadExtras {
@@ -80,8 +81,8 @@
 </section>
 
 @section Scripts {
-<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
-<script>
+<script nonce="@cspNonce" src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+<script nonce="@cspNonce">
 (function () {
     const input = document.getElementById('input-content-raw');
     const editorElement = document.getElementById('quill-editor');

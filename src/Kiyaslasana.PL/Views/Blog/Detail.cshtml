@@ -1,4 +1,7 @@
 @model BlogDetailViewModel
+@{
+    var cspNonce = ViewData["CspNonce"] as string;
+}
 
 <section class="hero" style="padding: var(--space-8) 0;">
     <div class="container">
@@ -39,5 +42,5 @@
 </section>
 
 @section JsonLd {
-<script type="application/ld+json">@Html.Raw(Model.BlogPostingJsonLd)</script>
+<script nonce="@cspNonce" type="application/ld+json">@Html.Raw(Model.BlogPostingJsonLd)</script>
 }

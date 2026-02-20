@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Data.Common;
 using Kiyaslasana.BL;
 using Kiyaslasana.DAL;
@@ -22,7 +23,10 @@ using ForwardedIPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<CspNonceViewDataFilter>();
+});
 builder.Services.AddRazorPages();
 builder.Services.Configure<RouteOptions>(options =>
 {
@@ -131,6 +135,9 @@ app.UseStatusCodePagesWithReExecute("/error/{0}");
 
 app.Use(async (context, next) =>
 {
+    var cspNonce = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+    context.Items[CspNonceViewDataFilter.CspNonceItemKey] = cspNonce;
+
     context.Response.OnStarting(() =>
     {
         context.Response.Headers.TryAdd("X-Content-Type-Options", "nosniff");
@@ -138,12 +145,14 @@ app.Use(async (context, next) =>
         context.Response.Headers.TryAdd("Referrer-Policy", "strict-origin-when-cross-origin");
         context.Response.Headers.TryAdd("Permissions-Policy", "geolocation=(), camera=(), microphone=()");
 
-        // Keep CSP baseline strict while allowing current inline scripts/styles and hosted assets used by the UI.
-        const string csp = "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline'; " +
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+        var csp = "default-src 'self'; " +
+            "object-src 'none'; " +
+            "base-uri 'self'; " +
+            "frame-ancestors 'self'; " +
+            $"script-src 'self' 'nonce-{cspNonce}' https://cdn.jsdelivr.net; " +
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
             "img-src 'self' data: https:; " +
-            "font-src 'self' data: https://fonts.gstatic.com";
+            "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net";
         context.Response.Headers.TryAdd("Content-Security-Policy", csp);
 
         return Task.CompletedTask;

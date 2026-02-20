@@ -2,6 +2,7 @@
 @{
     var phone = Model.Telefon;
     var title = string.Join(' ', new[] { phone.Marka, phone.ModelAdi }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+    var cspNonce = ViewData["CspNonce"] as string;
 }
 
 <section class="phone-hero">
@@ -153,6 +154,6 @@
 </div>
 
 @section JsonLd {
-<script type="application/ld+json">@Html.Raw(Model.ProductJsonLd)</script>
-<script type="application/ld+json">@Html.Raw(Model.BreadcrumbJsonLd)</script>
+<script nonce="@cspNonce" type="application/ld+json">@Html.Raw(Model.ProductJsonLd)</script>
+<script nonce="@cspNonce" type="application/ld+json">@Html.Raw(Model.BreadcrumbJsonLd)</script>
 }
