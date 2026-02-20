@@ -369,7 +369,7 @@ public sealed class KarsilastirController : SeoControllerBase
             RemoteIpAddress: HttpContext?.Connection.RemoteIpAddress?.ToString()));
         if (!queued)
         {
-            _logger.LogWarning("Compare visit queue is full. Dropping event for {SlugLeft}|{SlugRight}", slugLeft, slugRight);
+            _logger.LogWarning("Compare visit queue is unavailable. Dropping event for {SlugLeft}|{SlugRight}", slugLeft, slugRight);
         }
     }
 }

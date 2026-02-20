@@ -1,32 +1,53 @@
 using System.Threading.Channels;
-using Microsoft.Extensions.Options;
+using System.Runtime.CompilerServices;
 
 namespace Kiyaslasana.PL.Infrastructure;
 
 public sealed class CompareVisitQueue : ICompareVisitQueue
 {
+    private const int QueueCapacity = 1000;
+
     private readonly Channel<CompareVisitQueueItem> _channel;
+    private readonly ILogger<CompareVisitQueue> _logger;
+    private int _queuedCount;
 
-    public CompareVisitQueue(IOptions<CompareVisitTrackingOptions> options)
+    public CompareVisitQueue(ILogger<CompareVisitQueue> logger)
     {
-        var configuredCapacity = options.Value.QueueCapacity;
-        var safeCapacity = Math.Clamp(configuredCapacity, 128, 50_000);
+        _logger = logger;
 
-        _channel = Channel.CreateBounded<CompareVisitQueueItem>(new BoundedChannelOptions(safeCapacity)
+        _channel = Channel.CreateBounded<CompareVisitQueueItem>(new BoundedChannelOptions(QueueCapacity)
         {
             SingleReader = true,
             SingleWriter = false,
-            FullMode = BoundedChannelFullMode.DropWrite
+            FullMode = BoundedChannelFullMode.DropOldest
         });
     }
 
     public bool TryEnqueue(CompareVisitQueueItem item)
     {
-        return _channel.Writer.TryWrite(item);
+        var written = _channel.Writer.TryWrite(item);
+        if (!written)
+        {
+            return false;
+        }
+
+        var queued = Interlocked.Increment(ref _queuedCount);
+        if (queued > QueueCapacity)
+        {
+            // DropOldest keeps the queue bounded by evicting one item when full.
+            Interlocked.Exchange(ref _queuedCount, QueueCapacity);
+            _logger.LogWarning("Compare visit queue is full (capacity {Capacity}); oldest item dropped.", QueueCapacity);
+        }
+
+        return true;
     }
 
-    public IAsyncEnumerable<CompareVisitQueueItem> DequeueAllAsync(CancellationToken ct)
+    public async IAsyncEnumerable<CompareVisitQueueItem> DequeueAllAsync([EnumeratorCancellation] CancellationToken ct)
     {
-        return _channel.Reader.ReadAllAsync(ct);
+        await foreach (var item in _channel.Reader.ReadAllAsync(ct))
+        {
+            Interlocked.Decrement(ref _queuedCount);
+            yield return item;
+        }
     }
 }
