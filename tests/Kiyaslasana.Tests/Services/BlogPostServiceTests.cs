@@ -175,6 +175,18 @@ public class BlogPostServiceTests
             return Task.FromResult(list);
         }
 
+        public Task<IReadOnlyList<Telefon>> GetSimilarPhonesAsync(string slug, int take, CancellationToken ct)
+        {
+            IReadOnlyList<Telefon> list = [];
+            return Task.FromResult(list);
+        }
+
+        public Task<IReadOnlyList<RelatedComparisonLink>> GetTopComparedLinksAsync(string slug, int take, CancellationToken ct)
+        {
+            IReadOnlyList<RelatedComparisonLink> list = [];
+            return Task.FromResult(list);
+        }
+
         public Task<IReadOnlyList<RelatedComparisonLink>> GetRelatedComparisonLinksAsync(
             IReadOnlyList<string> currentSlugs,
             int perSlug,
@@ -253,6 +265,12 @@ public class BlogPostServiceTests
         public Task<IReadOnlyList<string>> GetDistinctBrandsAsync(CancellationToken ct)
         {
             IReadOnlyList<string> items = [];
+            return Task.FromResult(items);
+        }
+
+        public Task<IReadOnlyList<Telefon>> GetDetailSimilarAsync(string? brand, string excludeSlug, int take, CancellationToken ct)
+        {
+            IReadOnlyList<Telefon> items = [];
             return Task.FromResult(items);
         }
     }

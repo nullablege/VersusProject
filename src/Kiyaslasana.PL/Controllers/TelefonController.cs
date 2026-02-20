@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Net;
 using Kiyaslasana.BL.Abstractions;
+using Kiyaslasana.BL.Contracts;
 using Kiyaslasana.BL.Helpers;
 using Kiyaslasana.BL.SeoFilters;
 using Kiyaslasana.EL.Entities;
@@ -229,6 +230,8 @@ public sealed class TelefonController : SeoControllerBase
 
         ViewData["Nav"] = "telefonlar";
         var compareSuggestions = await GetDetailCompareSuggestionsAsync(normalizedSlug, title, ct);
+        var similarPhones = await _telefonService.GetSimilarPhonesAsync(normalizedSlug, 4, ct);
+        var topComparedLinks = await GetDetailTopComparedLinksAsync(normalizedSlug, title, ct);
         var relatedBlogPosts = await _blogPostService.GetLatestPublishedMentioningTelefonSlugAsync(normalizedSlug, 3, ct);
 
         return View(new TelefonDetailViewModel
@@ -238,6 +241,8 @@ public sealed class TelefonController : SeoControllerBase
             ProductJsonLd = BuildProductJsonLd(phone, normalizedSlug, schemaDescription, review, reviewBody),
             BreadcrumbJsonLd = BuildBreadcrumbJsonLd(phone, normalizedSlug),
             CompareSuggestions = compareSuggestions,
+            SimilarPhones = similarPhones,
+            TopComparedLinks = topComparedLinks,
             RelatedBlogPosts = relatedBlogPosts
         });
     }
@@ -506,7 +511,7 @@ public sealed class TelefonController : SeoControllerBase
             .Select(x => new CompareRelatedLinkViewModel
             {
                 Url = x.UrlPath,
-                Title = $"{currentTitle} vs {(!string.IsNullOrWhiteSpace(x.OtherTitle) ? x.OtherTitle : x.OtherSlug)}",
+                Title = BuildDetailCompareTitle(currentTitle, x),
                 ImageUrl = x.OtherImageUrl
             })
             .ToArray();
@@ -518,6 +523,27 @@ public sealed class TelefonController : SeoControllerBase
         });
 
         return links;
+    }
+
+    private async Task<IReadOnlyList<CompareRelatedLinkViewModel>> GetDetailTopComparedLinksAsync(
+        string slug,
+        string currentTitle,
+        CancellationToken ct)
+    {
+        var topCompared = await _telefonService.GetTopComparedLinksAsync(slug, 3, ct);
+        return topCompared
+            .Select(x => new CompareRelatedLinkViewModel
+            {
+                Url = x.UrlPath,
+                Title = BuildDetailCompareTitle(currentTitle, x),
+                ImageUrl = x.OtherImageUrl
+            })
+            .ToArray();
+    }
+
+    private static string BuildDetailCompareTitle(string currentTitle, RelatedComparisonLink relatedLink)
+    {
+        return $"{currentTitle} vs {(!string.IsNullOrWhiteSpace(relatedLink.OtherTitle) ? relatedLink.OtherTitle : relatedLink.OtherSlug)}";
     }
 
     private static IReadOnlyList<CompareRelatedLinkViewModel> BuildBrandPopularComparisons(

@@ -17,6 +17,10 @@ public interface ITelefonService
 
     Task<IReadOnlyList<Telefon>> GetLatestAsync(int take, CancellationToken ct);
 
+    Task<IReadOnlyList<Telefon>> GetSimilarPhonesAsync(string slug, int take, CancellationToken ct);
+
+    Task<IReadOnlyList<RelatedComparisonLink>> GetTopComparedLinksAsync(string slug, int take, CancellationToken ct);
+
     Task<IReadOnlyList<RelatedComparisonLink>> GetRelatedComparisonLinksAsync(
         IReadOnlyList<string> currentSlugs,
         int perSlug,

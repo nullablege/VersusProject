@@ -30,4 +30,6 @@ public interface ITelefonRepository
     Task<IReadOnlyList<Telefon>> GetLatestByBrandAsync(string brand, int take, CancellationToken ct);
 
     Task<IReadOnlyList<string>> GetDistinctBrandsAsync(CancellationToken ct);
+
+    Task<IReadOnlyList<Telefon>> GetDetailSimilarAsync(string? brand, string excludeSlug, int take, CancellationToken ct);
 }

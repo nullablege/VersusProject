@@ -201,4 +201,48 @@ public sealed class EfTelefonRepository : ITelefonRepository
             .OrderBy(x => x)
             .ToListAsync(ct);
     }
+
+    public async Task<IReadOnlyList<Telefon>> GetDetailSimilarAsync(string? brand, string excludeSlug, int take, CancellationToken ct)
+    {
+        var normalizedExcludeSlug = (excludeSlug ?? string.Empty).Trim().ToLowerInvariant();
+        if (normalizedExcludeSlug.Length == 0 || take <= 0)
+        {
+            return [];
+        }
+
+        var normalizedBrand = (brand ?? string.Empty).Trim();
+        var safeTake = Math.Clamp(take, 1, 8);
+        var baseQuery = _dbContext.Telefonlar
+            .AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.Slug) && x.Slug != normalizedExcludeSlug);
+
+        IQueryable<Telefon> orderedQuery;
+        if (normalizedBrand.Length > 0)
+        {
+            orderedQuery = baseQuery
+                .OrderByDescending(x => x.Marka == normalizedBrand)
+                .ThenByDescending(x => x.DuyurulmaTarihi)
+                .ThenByDescending(x => x.KayitTarihi)
+                .ThenByDescending(x => x.Id);
+        }
+        else
+        {
+            orderedQuery = baseQuery
+                .OrderByDescending(x => x.DuyurulmaTarihi)
+                .ThenByDescending(x => x.KayitTarihi)
+                .ThenByDescending(x => x.Id);
+        }
+
+        return await orderedQuery
+            .Select(x => new Telefon
+            {
+                Slug = x.Slug,
+                Marka = x.Marka,
+                ModelAdi = x.ModelAdi,
+                ResimUrl = x.ResimUrl,
+                DuyurulmaTarihi = x.DuyurulmaTarihi
+            })
+            .Take(safeTake)
+            .ToListAsync(ct);
+    }
 }

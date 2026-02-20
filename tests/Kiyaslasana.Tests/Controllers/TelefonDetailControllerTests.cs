@@ -72,6 +72,19 @@ public class TelefonDetailControllerTests
         Assert.Equal("Derived Review Body & More", json.RootElement.GetProperty("description").GetString());
     }
 
+    [Fact]
+    public async Task Detail_PopulatesAuthorityHubSections()
+    {
+        var controller = CreateController();
+
+        var result = await controller.Detail("test-phone", CancellationToken.None);
+
+        var view = Assert.IsType<ViewResult>(result);
+        var model = Assert.IsType<TelefonDetailViewModel>(view.Model);
+        Assert.Equal(2, model.SimilarPhones.Count);
+        Assert.Equal(3, model.TopComparedLinks.Count);
+    }
+
     private static TelefonController CreateController()
     {
         var controller = new TelefonController(
@@ -158,6 +171,40 @@ public class TelefonDetailControllerTests
         {
             IReadOnlyList<Telefon> list = [];
             return Task.FromResult(list);
+        }
+
+        public Task<IReadOnlyList<Telefon>> GetSimilarPhonesAsync(string slug, int take, CancellationToken ct)
+        {
+            IReadOnlyList<Telefon> list =
+            [
+                new Telefon
+                {
+                    Slug = "test-phone-2",
+                    Marka = "Test",
+                    ModelAdi = "Phone 2",
+                    DuyurulmaTarihi = "2025-01-01"
+                },
+                new Telefon
+                {
+                    Slug = "test-phone-3",
+                    Marka = "Test",
+                    ModelAdi = "Phone 3",
+                    DuyurulmaTarihi = "2024-06-01"
+                }
+            ];
+
+            return Task.FromResult((IReadOnlyList<Telefon>)list.Take(Math.Clamp(take, 1, 4)).ToArray());
+        }
+
+        public Task<IReadOnlyList<RelatedComparisonLink>> GetTopComparedLinksAsync(string slug, int take, CancellationToken ct)
+        {
+            IReadOnlyList<RelatedComparisonLink> list =
+            [
+                new RelatedComparisonLink(slug, "alpha", "alpha", slug, $"/karsilastir/alpha-vs-{slug}", "Alpha", null),
+                new RelatedComparisonLink(slug, "beta", "beta", slug, $"/karsilastir/beta-vs-{slug}", "Beta", null),
+                new RelatedComparisonLink(slug, "gamma", "gamma", slug, $"/karsilastir/gamma-vs-{slug}", "Gamma", null)
+            ];
+            return Task.FromResult((IReadOnlyList<RelatedComparisonLink>)list.Take(Math.Clamp(take, 1, 3)).ToArray());
         }
 
         public Task<IReadOnlyList<RelatedComparisonLink>> GetRelatedComparisonLinksAsync(
@@ -315,6 +362,12 @@ public class TelefonDetailControllerTests
         public Task<IReadOnlyList<string>> GetDistinctBrandsAsync(CancellationToken ct)
         {
             IReadOnlyList<string> list = [];
+            return Task.FromResult(list);
+        }
+
+        public Task<IReadOnlyList<Telefon>> GetDetailSimilarAsync(string? brand, string excludeSlug, int take, CancellationToken ct)
+        {
+            IReadOnlyList<Telefon> list = [];
             return Task.FromResult(list);
         }
     }

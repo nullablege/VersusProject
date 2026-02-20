@@ -98,13 +98,40 @@ public class TelefonServiceTests
         Assert.Equal(2, links.Count);
     }
 
-    private static TelefonService CreateService()
+    [Fact]
+    public async Task GetTopComparedLinksAsync_ReturnsDeterministicOrderedLimitedLinks()
     {
-        return new TelefonService(new StubTelefonRepository(), new MemoryCache(new MemoryCacheOptions()));
+        var service = CreateService();
+
+        var links = await service.GetTopComparedLinksAsync("alpha", take: 3, CancellationToken.None);
+
+        Assert.Equal(3, links.Count);
+        Assert.True(string.Compare(links[0].UrlPath, links[1].UrlPath, StringComparison.Ordinal) <= 0);
+        Assert.True(string.Compare(links[1].UrlPath, links[2].UrlPath, StringComparison.Ordinal) <= 0);
+    }
+
+    [Fact]
+    public async Task GetSimilarPhonesAsync_UsesSlugScopedCache()
+    {
+        var repository = new StubTelefonRepository();
+        var service = CreateService(repository);
+
+        var first = await service.GetSimilarPhonesAsync("alpha", take: 4, CancellationToken.None);
+        var second = await service.GetSimilarPhonesAsync("alpha", take: 4, CancellationToken.None);
+
+        Assert.Equal(first.Count, second.Count);
+        Assert.Equal(1, repository.DetailSimilarCallCount);
+    }
+
+    private static TelefonService CreateService(StubTelefonRepository? repository = null)
+    {
+        return new TelefonService(repository ?? new StubTelefonRepository(), new MemoryCache(new MemoryCacheOptions()));
     }
 
     private sealed class StubTelefonRepository : ITelefonRepository
     {
+        public int DetailSimilarCallCount { get; private set; }
+
         public Task<Telefon?> GetBySlugAsync(string slug, CancellationToken ct)
         {
             return Task.FromResult<Telefon?>(new Telefon { Slug = slug, ModelAdi = slug });
@@ -174,6 +201,19 @@ public class TelefonServiceTests
         {
             IReadOnlyList<string> list = Array.Empty<string>();
             return Task.FromResult(list);
+        }
+
+        public Task<IReadOnlyList<Telefon>> GetDetailSimilarAsync(string? brand, string excludeSlug, int take, CancellationToken ct)
+        {
+            DetailSimilarCallCount++;
+            IReadOnlyList<Telefon> list =
+            [
+                new Telefon { Slug = "delta", Marka = brand, ModelAdi = "Delta", DuyurulmaTarihi = "2025-01-01" },
+                new Telefon { Slug = "epsilon", Marka = brand, ModelAdi = "Epsilon", DuyurulmaTarihi = "2024-01-01" },
+                new Telefon { Slug = "zeta", Marka = "Other", ModelAdi = "Zeta", DuyurulmaTarihi = "2023-01-01" }
+            ];
+
+            return Task.FromResult((IReadOnlyList<Telefon>)list.Take(Math.Clamp(take, 1, 8)).ToArray());
         }
     }
 }

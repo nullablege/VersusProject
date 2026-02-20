@@ -12,6 +12,8 @@ public sealed class TelefonService : ITelefonService
     private const string RelatedCandidatesCacheKey = "telefon:compare:related-candidates:v1";
     private const int RelatedCandidatesTake = 240;
     private const string RelatedLinksCacheKeyPrefix = "telefon:compare:related-links:v1";
+    private const string DetailSimilarCacheKeyPrefix = "telefon:detail:similar:v1";
+    private const string DetailTopComparedCacheKeyPrefix = "telefon:detail:top-compares:v1";
 
     private static readonly Regex CacheableSlugRegex = new(
         $"^[a-z0-9-]{{1,{TelefonConstraints.SlugMaxLength}}}$",
@@ -21,6 +23,7 @@ public sealed class TelefonService : ITelefonService
     private static readonly TimeSpan ListCacheDuration = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan RelatedCandidatesCacheDuration = TimeSpan.FromHours(1);
     private static readonly TimeSpan RelatedLinksCacheDuration = TimeSpan.FromHours(1);
+    private static readonly TimeSpan DetailHubCacheDuration = TimeSpan.FromMinutes(30);
 
     private readonly ITelefonRepository _telefonRepository;
     private readonly IMemoryCache _memoryCache;
@@ -186,6 +189,72 @@ public sealed class TelefonService : ITelefonService
         SetCacheEntry(cacheKey, value, new MemoryCacheEntryOptions
         {
             AbsoluteExpirationRelativeToNow = ListCacheDuration,
+            Size = 1
+        });
+
+        return value;
+    }
+
+    public async Task<IReadOnlyList<Telefon>> GetSimilarPhonesAsync(string slug, int take, CancellationToken ct)
+    {
+        var normalizedSlug = NormalizeSlug(slug);
+        if (!IsCacheableSlug(normalizedSlug))
+        {
+            return [];
+        }
+
+        var safeTake = Math.Clamp(take, 1, 4);
+        var cacheKey = $"{DetailSimilarCacheKeyPrefix}:{normalizedSlug}:{safeTake}";
+        if (_memoryCache.TryGetValue<IReadOnlyList<Telefon>>(cacheKey, out var cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var currentPhone = await GetBySlugAsync(normalizedSlug, ct);
+        if (currentPhone is null)
+        {
+            return [];
+        }
+
+        var similar = await _telefonRepository.GetDetailSimilarAsync(currentPhone.Marka, normalizedSlug, safeTake, ct);
+        var value = similar ?? [];
+
+        SetCacheEntry(cacheKey, value, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = DetailHubCacheDuration,
+            Size = 1
+        });
+
+        return value;
+    }
+
+    public async Task<IReadOnlyList<RelatedComparisonLink>> GetTopComparedLinksAsync(string slug, int take, CancellationToken ct)
+    {
+        var normalizedSlug = NormalizeSlug(slug);
+        if (!IsCacheableSlug(normalizedSlug))
+        {
+            return [];
+        }
+
+        var safeTake = Math.Clamp(take, 1, 3);
+        var cacheKey = $"{DetailTopComparedCacheKeyPrefix}:{normalizedSlug}:{safeTake}";
+        if (_memoryCache.TryGetValue<IReadOnlyList<RelatedComparisonLink>>(cacheKey, out var cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var relatedLinks = await GetRelatedComparisonLinksAsync([normalizedSlug], perSlug: 12, totalMax: 24, ct);
+        var value = relatedLinks
+            .GroupBy(x => $"{x.CanonicalLeftSlug}|{x.CanonicalRightSlug}", StringComparer.Ordinal)
+            .Select(x => x.First())
+            .OrderBy(x => x.CanonicalLeftSlug, StringComparer.Ordinal)
+            .ThenBy(x => x.CanonicalRightSlug, StringComparer.Ordinal)
+            .Take(safeTake)
+            .ToArray();
+
+        SetCacheEntry(cacheKey, (IReadOnlyList<RelatedComparisonLink>)value, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = DetailHubCacheDuration,
             Size = 1
         });
 

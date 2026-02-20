@@ -92,6 +92,47 @@
         </section>
     }
 
+    @if (Model.SimilarPhones.Count > 0)
+    {
+        <section class="section" style="padding-top: var(--space-6);">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Benzer Telefonlar</h2>
+                    <p class="section-subtitle">Ayni marka agirlikli, en guncel modeller</p>
+                </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
+                @foreach (var similar in Model.SimilarPhones.Where(x => !string.IsNullOrWhiteSpace(x.Slug)))
+                {
+                    var similarTitle = string.Join(' ', new[] { similar.Marka, similar.ModelAdi }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+                    if (string.IsNullOrWhiteSpace(similarTitle))
+                    {
+                        similarTitle = similar.Slug!;
+                    }
+                    <a class="btn btn-secondary btn-sm" href="/telefon/@similar.Slug">@similarTitle</a>
+                }
+            </div>
+        </section>
+    }
+
+    @if (Model.TopComparedLinks.Count > 0)
+    {
+        <section class="section" style="padding-top: var(--space-6);">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">En Cok Karsilastirilanlar</h2>
+                    <p class="section-subtitle">Bu model icin one cikan karsilastirma kombinasyonlari</p>
+                </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
+                @foreach (var compareLink in Model.TopComparedLinks)
+                {
+                    <a class="btn btn-secondary btn-sm" href="@compareLink.Url">@compareLink.Title</a>
+                }
+            </div>
+        </section>
+    }
+
     @if (Model.RelatedBlogPosts.Count > 0)
     {
         <section class="section" style="padding-top: var(--space-6);">

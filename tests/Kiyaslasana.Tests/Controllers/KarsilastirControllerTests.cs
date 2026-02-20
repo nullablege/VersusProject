@@ -171,6 +171,18 @@ public class KarsilastirControllerTests
             return Task.FromResult(list);
         }
 
+        public Task<IReadOnlyList<Telefon>> GetSimilarPhonesAsync(string slug, int take, CancellationToken ct)
+        {
+            IReadOnlyList<Telefon> list = [];
+            return Task.FromResult(list);
+        }
+
+        public Task<IReadOnlyList<RelatedComparisonLink>> GetTopComparedLinksAsync(string slug, int take, CancellationToken ct)
+        {
+            IReadOnlyList<RelatedComparisonLink> list = [];
+            return Task.FromResult(list);
+        }
+
         public Task<IReadOnlyList<RelatedComparisonLink>> GetRelatedComparisonLinksAsync(
             IReadOnlyList<string> currentSlugs,
             int perSlug,

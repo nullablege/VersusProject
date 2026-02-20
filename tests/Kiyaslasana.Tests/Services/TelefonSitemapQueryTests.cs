@@ -82,5 +82,11 @@ public class TelefonSitemapQueryTests
             IReadOnlyList<string> list = ["Apple", "Samsung"];
             return Task.FromResult(list);
         }
+
+        public Task<IReadOnlyList<Telefon>> GetDetailSimilarAsync(string? brand, string excludeSlug, int take, CancellationToken ct)
+        {
+            IReadOnlyList<Telefon> list = [];
+            return Task.FromResult(list);
+        }
     }
 }
