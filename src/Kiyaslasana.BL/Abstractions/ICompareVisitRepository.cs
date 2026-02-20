@@ -4,7 +4,13 @@ namespace Kiyaslasana.BL.Abstractions;
 
 public interface ICompareVisitRepository
 {
-    Task AddVisitAsync(string slugLeft, string slugRight, DateTimeOffset visitedAt, string? ipHash, CancellationToken ct);
+    Task<bool> TryAddVisitAsync(
+        string canonicalLeftSlug,
+        string canonicalRightSlug,
+        DateTimeOffset visitedAt,
+        string? ipHash,
+        TimeSpan dedupeWindow,
+        CancellationToken ct);
 
     Task<IReadOnlyList<TopComparedPair>> GetTopComparedAsync(int take, CancellationToken ct);
 

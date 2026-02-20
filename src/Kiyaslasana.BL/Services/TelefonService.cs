@@ -26,6 +26,7 @@ public sealed class TelefonService : ITelefonService
     private static readonly TimeSpan RelatedLinksCacheDuration = TimeSpan.FromHours(1);
     private static readonly TimeSpan DetailHubCacheDuration = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan TopComparedCacheDuration = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan CompareVisitDedupeWindow = TimeSpan.FromMinutes(10);
 
     private readonly ITelefonRepository _telefonRepository;
     private readonly ICompareVisitRepository _compareVisitRepository;
@@ -254,13 +255,13 @@ public sealed class TelefonService : ITelefonService
         var value = topPairs
             .Select(x =>
             {
-                var otherSlug = x.SlugLeft == normalizedSlug ? x.SlugRight : x.SlugLeft;
+                var otherSlug = x.CanonicalLeftSlug == normalizedSlug ? x.CanonicalRightSlug : x.CanonicalLeftSlug;
                 return new RelatedComparisonLink(
                     CurrentSlug: normalizedSlug,
                     OtherSlug: otherSlug,
-                    CanonicalLeftSlug: x.SlugLeft,
-                    CanonicalRightSlug: x.SlugRight,
-                    UrlPath: $"/karsilastir/{x.SlugLeft}-vs-{x.SlugRight}",
+                    CanonicalLeftSlug: x.CanonicalLeftSlug,
+                    CanonicalRightSlug: x.CanonicalRightSlug,
+                    UrlPath: $"/karsilastir/{x.CanonicalLeftSlug}-vs-{x.CanonicalRightSlug}",
                     OtherTitle: otherSlug,
                     OtherImageUrl: null);
             })
@@ -297,7 +298,13 @@ public sealed class TelefonService : ITelefonService
         var canonicalRight = canonicalLeft == normalizedLeft ? normalizedRight : normalizedLeft;
         var normalizedIpHash = string.IsNullOrWhiteSpace(ipHash) ? null : ipHash.Trim();
 
-        await _compareVisitRepository.AddVisitAsync(canonicalLeft, canonicalRight, DateTimeOffset.UtcNow, normalizedIpHash, ct);
+        await _compareVisitRepository.TryAddVisitAsync(
+            canonicalLeftSlug: canonicalLeft,
+            canonicalRightSlug: canonicalRight,
+            visitedAt: DateTimeOffset.UtcNow,
+            ipHash: normalizedIpHash,
+            dedupeWindow: CompareVisitDedupeWindow,
+            ct: ct);
     }
 
     public async Task<IReadOnlyList<TopComparedPair>> GetTopComparedAsync(int take, CancellationToken ct)

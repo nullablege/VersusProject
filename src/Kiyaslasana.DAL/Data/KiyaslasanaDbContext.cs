@@ -94,18 +94,18 @@ public sealed class KiyaslasanaDbContext : IdentityDbContext<ApplicationUser, Id
             entity.ToTable(CompareVisitsTableName);
             entity.HasKey(x => x.Id);
 
-            entity.Property(x => x.SlugLeft)
+            entity.Property(x => x.CanonicalLeftSlug)
                 .HasMaxLength(CompareVisitConstraints.SlugMaxLength)
                 .IsRequired();
-            entity.Property(x => x.SlugRight)
+            entity.Property(x => x.CanonicalRightSlug)
                 .HasMaxLength(CompareVisitConstraints.SlugMaxLength)
                 .IsRequired();
-            entity.Property(x => x.IPHash)
+            entity.Property(x => x.IpHash)
                 .HasMaxLength(CompareVisitConstraints.IpHashMaxLength);
             entity.Property(x => x.VisitedAt)
                 .IsRequired();
 
-            entity.HasIndex(x => new { x.SlugLeft, x.SlugRight, x.VisitedAt });
+            entity.HasIndex(x => new { x.CanonicalLeftSlug, x.CanonicalRightSlug });
             entity.HasIndex(x => x.VisitedAt);
         });
     }

@@ -41,6 +41,10 @@ builder.Services.AddScoped<IValidator<RegisterViewModel>, RegisterValidator>();
 
 builder.Services.AddBusinessLayer();
 builder.Services.AddDataAccessLayer(builder.Configuration);
+builder.Services.Configure<CompareVisitTrackingOptions>(
+    builder.Configuration.GetSection(CompareVisitTrackingOptions.SectionName));
+builder.Services.AddSingleton<ICompareVisitQueue, CompareVisitQueue>();
+builder.Services.AddHostedService<CompareVisitBackgroundService>();
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
     {

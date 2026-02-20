@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Security.Cryptography;
 using Kiyaslasana.BL.Abstractions;
 using Kiyaslasana.PL.Infrastructure;
 using Kiyaslasana.PL.ViewModels;
@@ -13,16 +12,16 @@ namespace Kiyaslasana.PL.Controllers;
 public sealed class KarsilastirController : SeoControllerBase
 {
     private readonly ITelefonService _telefonService;
-    private readonly IServiceScopeFactory? _scopeFactory;
+    private readonly ICompareVisitQueue? _compareVisitQueue;
     private readonly ILogger<KarsilastirController> _logger;
 
     public KarsilastirController(
         ITelefonService telefonService,
-        IServiceScopeFactory? scopeFactory = null,
+        ICompareVisitQueue? compareVisitQueue = null,
         ILogger<KarsilastirController>? logger = null)
     {
         _telefonService = telefonService;
-        _scopeFactory = scopeFactory;
+        _compareVisitQueue = compareVisitQueue;
         _logger = logger ?? NullLogger<KarsilastirController>.Instance;
     }
 
@@ -358,43 +357,20 @@ public sealed class KarsilastirController : SeoControllerBase
             return;
         }
 
-        var scopeFactory = _scopeFactory ?? HttpContext?.RequestServices.GetService<IServiceScopeFactory>();
-        if (scopeFactory is null)
+        var queue = _compareVisitQueue ?? HttpContext?.RequestServices.GetService<ICompareVisitQueue>();
+        if (queue is null)
         {
             return;
         }
 
-        var remoteIp = HttpContext?.Connection.RemoteIpAddress?.ToString();
-        var ipHash = BuildIpHash(remoteIp);
-
-        _ = Task.Run(async () =>
+        var queued = queue.TryEnqueue(new CompareVisitQueueItem(
+            CanonicalLeftSlug: slugLeft,
+            CanonicalRightSlug: slugRight,
+            RemoteIpAddress: HttpContext?.Connection.RemoteIpAddress?.ToString()));
+        if (!queued)
         {
-            try
-            {
-                using var scope = scopeFactory.CreateScope();
-                var telefonService = scope.ServiceProvider.GetRequiredService<ITelefonService>();
-                await telefonService.RecordCompareVisitAsync(slugLeft, slugRight, ipHash, CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to record compare visit for {SlugLeft}|{SlugRight}", slugLeft, slugRight);
-            }
-        });
-    }
-
-    private static string? BuildIpHash(string? ipAddress)
-    {
-        if (string.IsNullOrWhiteSpace(ipAddress))
-        {
-            return null;
+            _logger.LogWarning("Compare visit queue is full. Dropping event for {SlugLeft}|{SlugRight}", slugLeft, slugRight);
         }
-
-        var ipBytes = System.Text.Encoding.UTF8.GetBytes(ipAddress.Trim());
-        var hashBytes = SHA256.HashData(ipBytes);
-        return Convert.ToHexString(hashBytes);
     }
 }
-
-
-
 

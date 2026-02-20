@@ -223,9 +223,15 @@ public class TelefonServiceTests
 
     private sealed class StubCompareVisitRepository : ICompareVisitRepository
     {
-        public Task AddVisitAsync(string slugLeft, string slugRight, DateTimeOffset visitedAt, string? ipHash, CancellationToken ct)
+        public Task<bool> TryAddVisitAsync(
+            string canonicalLeftSlug,
+            string canonicalRightSlug,
+            DateTimeOffset visitedAt,
+            string? ipHash,
+            TimeSpan dedupeWindow,
+            CancellationToken ct)
         {
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
         public Task<IReadOnlyList<TopComparedPair>> GetTopComparedAsync(int take, CancellationToken ct)

@@ -15,17 +15,37 @@ public sealed class EfCompareVisitRepository : ICompareVisitRepository
         _dbContext = dbContext;
     }
 
-    public async Task AddVisitAsync(string slugLeft, string slugRight, DateTimeOffset visitedAt, string? ipHash, CancellationToken ct)
+    public async Task<bool> TryAddVisitAsync(
+        string canonicalLeftSlug,
+        string canonicalRightSlug,
+        DateTimeOffset visitedAt,
+        string? ipHash,
+        TimeSpan dedupeWindow,
+        CancellationToken ct)
     {
+        var windowStart = visitedAt.Subtract(dedupeWindow);
+        var hasRecent = await _dbContext.CompareVisits
+            .AsNoTracking()
+            .AnyAsync(x =>
+                x.CanonicalLeftSlug == canonicalLeftSlug &&
+                x.CanonicalRightSlug == canonicalRightSlug &&
+                x.IpHash == ipHash &&
+                x.VisitedAt >= windowStart, ct);
+        if (hasRecent)
+        {
+            return false;
+        }
+
         _dbContext.CompareVisits.Add(new CompareVisit
         {
-            SlugLeft = slugLeft,
-            SlugRight = slugRight,
+            CanonicalLeftSlug = canonicalLeftSlug,
+            CanonicalRightSlug = canonicalRightSlug,
             VisitedAt = visitedAt,
-            IPHash = ipHash
+            IpHash = ipHash
         });
 
         await _dbContext.SaveChangesAsync(ct);
+        return true;
     }
 
     public async Task<IReadOnlyList<TopComparedPair>> GetTopComparedAsync(int take, CancellationToken ct)
@@ -34,14 +54,14 @@ public sealed class EfCompareVisitRepository : ICompareVisitRepository
 
         return await _dbContext.CompareVisits
             .AsNoTracking()
-            .GroupBy(x => new { x.SlugLeft, x.SlugRight })
+            .GroupBy(x => new { x.CanonicalLeftSlug, x.CanonicalRightSlug })
             .Select(x => new TopComparedPair(
-                x.Key.SlugLeft,
-                x.Key.SlugRight,
+                x.Key.CanonicalLeftSlug,
+                x.Key.CanonicalRightSlug,
                 x.Count()))
             .OrderByDescending(x => x.VisitCount)
-            .ThenBy(x => x.SlugLeft)
-            .ThenBy(x => x.SlugRight)
+            .ThenBy(x => x.CanonicalLeftSlug)
+            .ThenBy(x => x.CanonicalRightSlug)
             .Take(safeTake)
             .ToListAsync(ct);
     }
@@ -52,15 +72,15 @@ public sealed class EfCompareVisitRepository : ICompareVisitRepository
 
         return await _dbContext.CompareVisits
             .AsNoTracking()
-            .Where(x => x.SlugLeft == slug || x.SlugRight == slug)
-            .GroupBy(x => new { x.SlugLeft, x.SlugRight })
+            .Where(x => x.CanonicalLeftSlug == slug || x.CanonicalRightSlug == slug)
+            .GroupBy(x => new { x.CanonicalLeftSlug, x.CanonicalRightSlug })
             .Select(x => new TopComparedPair(
-                x.Key.SlugLeft,
-                x.Key.SlugRight,
+                x.Key.CanonicalLeftSlug,
+                x.Key.CanonicalRightSlug,
                 x.Count()))
             .OrderByDescending(x => x.VisitCount)
-            .ThenBy(x => x.SlugLeft)
-            .ThenBy(x => x.SlugRight)
+            .ThenBy(x => x.CanonicalLeftSlug)
+            .ThenBy(x => x.CanonicalRightSlug)
             .Take(safeTake)
             .ToListAsync(ct);
     }
