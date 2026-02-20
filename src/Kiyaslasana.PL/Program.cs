@@ -116,10 +116,14 @@ var applyMigrationsOnStartup = builder.Configuration.GetValue<bool?>("Database:A
     ?? builder.Environment.IsDevelopment();
 
 app.UseForwardedHeaders();
-app.UseExceptionHandler("/error");
 
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/error");
     app.UseHsts();
 }
 
