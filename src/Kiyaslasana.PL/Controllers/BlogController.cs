@@ -32,9 +32,16 @@ public sealed class BlogController : SeoControllerBase
         var (items, totalCount) = await _blogPostService.GetPublishedPagedAsync(page, BlogListPageSize, ct);
         var paging = PagingHelper.Normalize(page, BlogListPageSize, totalCount);
         var basePath = "/blog";
+
+        if (paging.Page != page)
+        {
+            return RedirectPermanent(BuildListingPath(basePath, paging.Page));
+        }
+
         var canonicalPath = BuildListingPath(basePath, paging.Page);
         var prevPath = paging.Page > 1 ? BuildListingPath(basePath, paging.Page - 1) : null;
         var nextPath = paging.Page < paging.TotalPages ? BuildListingPath(basePath, paging.Page + 1) : null;
+        const string robotsMeta = "index,follow";
 
         SetSeo(
             title: paging.Page > 1 ? $"Blog - Sayfa {paging.Page}" : "Blog",
@@ -42,7 +49,7 @@ public sealed class BlogController : SeoControllerBase
             canonicalUrl: BuildAbsoluteUrl(canonicalPath));
 
         ViewData["Nav"] = "blog";
-        ViewData["Robots"] = paging.Page >= 2 ? "noindex,follow" : "index,follow";
+        ViewData["Robots"] = robotsMeta;
         ViewData["PrevUrl"] = prevPath is null ? null : BuildAbsoluteUrl(prevPath);
         ViewData["NextUrl"] = nextPath is null ? null : BuildAbsoluteUrl(nextPath);
 
@@ -56,7 +63,7 @@ public sealed class BlogController : SeoControllerBase
             CanonicalUrl = BuildAbsoluteUrl(canonicalPath),
             PrevUrl = prevPath,
             NextUrl = nextPath,
-            RobotsMeta = paging.Page >= 2 ? "noindex,follow" : "index,follow"
+            RobotsMeta = robotsMeta
         });
     }
 

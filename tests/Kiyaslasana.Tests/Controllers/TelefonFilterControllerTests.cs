@@ -61,7 +61,19 @@ public class TelefonFilterControllerTests
         Assert.IsType<ViewResult>(page2Result);
 
         Assert.Equal("https://kiyaslasana.com/telefonlar/5g-telefonlar", page1Controller.ViewData["Canonical"]);
-        Assert.Equal("https://kiyaslasana.com/telefonlar/5g-telefonlar?page=2", page2Controller.ViewData["Canonical"]);
+        Assert.Equal("https://kiyaslasana.com/telefonlar/5g-telefonlar", page2Controller.ViewData["Canonical"]);
+    }
+
+    [Fact]
+    public async Task ByFilter_Page2_SetsPrevAndNextLinks()
+    {
+        var controller = CreateController();
+
+        var result = await controller.ByFilter("5g-telefonlar", page: 2, CancellationToken.None);
+
+        Assert.IsType<ViewResult>(result);
+        Assert.Equal("https://kiyaslasana.com/telefonlar/5g-telefonlar", controller.ViewData["PrevUrl"]);
+        Assert.Equal("https://kiyaslasana.com/telefonlar/5g-telefonlar?page=3", controller.ViewData["NextUrl"]);
     }
 
     [Fact]
@@ -207,7 +219,7 @@ public class TelefonFilterControllerTests
 
     private sealed class StubTelefonRepository : ITelefonRepository
     {
-        private static readonly IReadOnlyList<Telefon> Phones = Enumerable.Range(1, 60)
+        private static readonly IReadOnlyList<Telefon> Phones = Enumerable.Range(1, 120)
             .Select(x => new Telefon
             {
                 Slug = $"test-5g-{x:D3}",

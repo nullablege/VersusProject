@@ -78,7 +78,9 @@ public sealed class TelefonController : SeoControllerBase
             popularComparisons: [],
             filterPopularComparison: null,
             listingTitle: title,
-            listingDescription: description);
+            listingDescription: description,
+            useFirstPageCanonicalForPagedResults: false,
+            noindexPagedResults: false);
 
         ApplyListingSeo(viewModel, title, description);
 
@@ -135,7 +137,9 @@ public sealed class TelefonController : SeoControllerBase
             popularComparisons: popularComparisons,
             filterPopularComparison: null,
             listingTitle: listingTitle,
-            listingDescription: listingDescription);
+            listingDescription: listingDescription,
+            useFirstPageCanonicalForPagedResults: true,
+            noindexPagedResults: true);
 
         ApplyListingSeo(viewModel, listingTitle, listingDescription);
 
@@ -180,7 +184,9 @@ public sealed class TelefonController : SeoControllerBase
             popularComparisons: [],
             filterPopularComparison: filterPopularComparison,
             listingTitle: filter.Title,
-            listingDescription: filter.MetaDescription);
+            listingDescription: filter.MetaDescription,
+            useFirstPageCanonicalForPagedResults: true,
+            noindexPagedResults: true);
 
         ApplyListingSeo(viewModel, filter.Title, filter.MetaDescription);
         ViewData["Nav"] = "telefonlar";
@@ -399,7 +405,9 @@ public sealed class TelefonController : SeoControllerBase
         IReadOnlyList<CompareRelatedLinkViewModel> popularComparisons,
         CompareRelatedLinkViewModel? filterPopularComparison,
         string listingTitle,
-        string listingDescription)
+        string listingDescription,
+        bool useFirstPageCanonicalForPagedResults,
+        bool noindexPagedResults)
     {
         var brands = brandMap
             .OrderBy(x => x.Value, StringComparer.OrdinalIgnoreCase)
@@ -412,9 +420,14 @@ public sealed class TelefonController : SeoControllerBase
             })
             .ToArray();
 
-        var canonicalPath = BuildListingPath(basePath, page);
+        var canonicalPath = useFirstPageCanonicalForPagedResults && page > 1
+            ? basePath
+            : BuildListingPath(basePath, page);
         var prevPath = page > 1 ? BuildListingPath(basePath, page - 1) : null;
         var nextPath = page < totalPages ? BuildListingPath(basePath, page + 1) : null;
+        var robotsMeta = noindexPagedResults && page > 1
+            ? "noindex,follow"
+            : "index,follow";
 
         return new TelefonListViewModel
         {
@@ -432,7 +445,7 @@ public sealed class TelefonController : SeoControllerBase
             CanonicalUrl = BuildAbsoluteUrl(canonicalPath),
             PrevUrl = prevPath,
             NextUrl = nextPath,
-            RobotsMeta = page >= 2 ? "noindex,follow" : "index,follow",
+            RobotsMeta = robotsMeta,
             PopularComparisons = popularComparisons,
             FilterPopularComparison = filterPopularComparison
         };

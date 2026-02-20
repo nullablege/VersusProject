@@ -56,7 +56,7 @@ public class KarsilastirControllerTests
             HttpContext = BuildHttpContext()
         };
 
-        var result = await controller.CompareTwo("zeta", "alpha", CancellationToken.None);
+        var result = await controller.CompareTwo("alpha", "zeta", CancellationToken.None);
 
         var viewResult = Assert.IsType<ViewResult>(result);
         var model = Assert.IsType<CompareViewModel>(viewResult.Model);
@@ -69,6 +69,22 @@ public class KarsilastirControllerTests
         Assert.Equal("BreadcrumbList", breadcrumbJson.RootElement.GetProperty("@type").GetString());
         Assert.Equal("ItemList", itemListJson.RootElement.GetProperty("@type").GetString());
         Assert.Equal(2, itemListJson.RootElement.GetProperty("itemListElement").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task CompareTwo_NonCanonicalOrder_RedirectsPermanently()
+    {
+        var controller = new KarsilastirController(new StubTelefonService());
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = BuildHttpContext()
+        };
+
+        var result = await controller.CompareTwo("zeta", "alpha", CancellationToken.None);
+
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.True(redirect.Permanent);
+        Assert.Equal("/karsilastir/alpha-vs-zeta", redirect.Url);
     }
 
     private static HttpContext BuildHttpContext(params string[] roles)

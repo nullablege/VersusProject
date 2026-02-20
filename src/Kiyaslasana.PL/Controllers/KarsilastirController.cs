@@ -119,6 +119,17 @@ public sealed class KarsilastirController : SeoControllerBase
         }
 
         var canonicalPath = "/karsilastir/" + string.Join("-vs-", resolve.CanonicalSlugs);
+        var requestedOrder = slugs
+            .Select(_telefonService.NormalizeSlug)
+            .Where(x => x.Length > 0)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        if (!requestedOrder.SequenceEqual(resolve.CanonicalSlugs, StringComparer.Ordinal))
+        {
+            return RedirectPermanent($"{Request.PathBase}{canonicalPath}");
+        }
+
         var canonicalUrl = BuildAbsoluteUrl(canonicalPath);
         var indexable = isSeoIndexable && resolve.CanonicalSlugs.Count == 2;
         var comparisonTitle = string.Join(" vs ", resolve.Phones.Select(BuildPhoneTitle));

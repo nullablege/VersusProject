@@ -4,18 +4,20 @@ using Microsoft.AspNetCore.OutputCaching;
 
 namespace Kiyaslasana.PL.Controllers;
 
-public sealed class RobotsController : Controller
+public sealed class RobotsController : SeoControllerBase
 {
     [HttpGet("/robots.txt")]
     [OutputCache(PolicyName = OutputCachePolicyNames.AnonymousOneDay)]
     public IActionResult Index()
     {
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
         var body = string.Join('\n',
         [
             "User-agent: *",
             "Disallow:",
-            $"Sitemap: {baseUrl}/sitemap.xml"
+            "Disallow: /*?*sort=",
+            "Disallow: /telefonlar/marka/*?*page=",
+            "Disallow: /telefonlar/*?*page=",
+            $"Sitemap: {BuildAbsoluteUrl("/sitemap.xml")}"
         ]);
 
         return Content(body, "text/plain; charset=utf-8");

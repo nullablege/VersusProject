@@ -42,6 +42,34 @@ public class BlogControllerTests
         Assert.IsType<NotFoundResult>(result);
     }
 
+    [Fact]
+    public async Task Index_Page2_SetsSelfCanonicalAndPrevNextLinks()
+    {
+        var controller = CreateController(new StubBlogPostService(publishedTotalCount: 40));
+
+        var result = await controller.Index(page: 2, CancellationToken.None);
+
+        var view = Assert.IsType<ViewResult>(result);
+        var model = Assert.IsType<BlogListViewModel>(view.Model);
+        Assert.Equal(2, model.Page);
+        Assert.Equal("https://kiyaslasana.com/blog?page=2", controller.ViewData["Canonical"]);
+        Assert.Equal("https://kiyaslasana.com/blog", controller.ViewData["PrevUrl"]);
+        Assert.Equal("https://kiyaslasana.com/blog?page=3", controller.ViewData["NextUrl"]);
+        Assert.Equal("index,follow", controller.ViewData["Robots"]);
+    }
+
+    [Fact]
+    public async Task Index_PageBeyondTotal_RedirectsToLastPage()
+    {
+        var controller = CreateController(new StubBlogPostService(publishedTotalCount: 30));
+
+        var result = await controller.Index(page: 99, CancellationToken.None);
+
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.True(redirect.Permanent);
+        Assert.Equal("/blog?page=3", redirect.Url);
+    }
+
     private static BlogController CreateController(IBlogPostService? blogPostService = null)
     {
         var controller = new BlogController(blogPostService ?? new StubBlogPostService());
@@ -80,10 +108,12 @@ public class BlogControllerTests
     private sealed class StubBlogPostService : IBlogPostService
     {
         private readonly bool _returnNullBySlug;
+        private readonly int _publishedTotalCount;
 
-        public StubBlogPostService(bool returnNullBySlug = false)
+        public StubBlogPostService(bool returnNullBySlug = false, int publishedTotalCount = 1)
         {
             _returnNullBySlug = returnNullBySlug;
+            _publishedTotalCount = Math.Max(publishedTotalCount, 0);
         }
 
         public Task<(IReadOnlyList<BlogPost> Items, int TotalCount)> GetAdminPagedAsync(int page, int pageSize, CancellationToken ct)
@@ -109,24 +139,32 @@ public class BlogControllerTests
 
         public Task<(IReadOnlyList<BlogPost> Items, int TotalCount)> GetPublishedPagedAsync(int page, int pageSize, CancellationToken ct)
         {
-            IReadOnlyList<BlogPost> items =
-            [
-                new BlogPost
+            var safePageSize = Math.Max(pageSize, 1);
+            var safePage = Math.Max(page, 1);
+            var totalPages = Math.Max(1, (int)Math.Ceiling(_publishedTotalCount / (double)safePageSize));
+            var effectivePage = Math.Min(safePage, totalPages);
+            var skip = (effectivePage - 1) * safePageSize;
+            var remaining = Math.Max(_publishedTotalCount - skip, 0);
+            var take = Math.Min(safePageSize, remaining);
+            var now = DateTimeOffset.UtcNow;
+
+            var items = Enumerable.Range(0, take)
+                .Select(index => new BlogPost
                 {
-                    Id = 1,
-                    Title = "Test Yazi",
-                    Slug = "test-yazi",
+                    Id = skip + index + 1,
+                    Title = $"Test Yazi {skip + index + 1}",
+                    Slug = $"test-yazi-{skip + index + 1}",
                     Excerpt = "Test icerik",
                     ContentRaw = "<p>raw</p>",
                     ContentSanitized = "<p>safe</p>",
                     IsPublished = true,
-                    PublishedAt = DateTimeOffset.UtcNow,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    UpdatedAt = DateTimeOffset.UtcNow
-                }
-            ];
+                    PublishedAt = now,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                })
+                .ToArray();
 
-            return Task.FromResult((items, items.Count));
+            return Task.FromResult(((IReadOnlyList<BlogPost>)items, _publishedTotalCount));
         }
 
         public Task<BlogPost?> GetPublishedBySlugAsync(string slug, CancellationToken ct)
