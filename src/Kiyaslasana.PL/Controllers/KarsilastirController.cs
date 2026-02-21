@@ -97,19 +97,19 @@ public sealed class KarsilastirController : SeoControllerBase
         return Redirect(comparePath);
     }
 
-    [HttpGet("/karsilastir/{slug1:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug2:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}")]
+    [HttpGet("/karsilastir/{slug1:regex(^(?!.*-vs-)[[A-Za-z0-9-]]+$)}-vs-{slug2:regex(^(?!.*-vs-)[[A-Za-z0-9-]]+$)}")]
     public async Task<IActionResult> CompareTwo(string slug1, string slug2, CancellationToken ct)
     {
         return await RenderCompareAsync([slug1, slug2], isSeoIndexable: true, ct);
     }
 
-    [HttpGet("/karsilastir/{slug1:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug2:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug3:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}")]
+    [HttpGet("/karsilastir/{slug1:regex(^(?!.*-vs-)[[A-Za-z0-9-]]+$)}-vs-{slug2:regex(^(?!.*-vs-)[[A-Za-z0-9-]]+$)}-vs-{slug3:regex(^(?!.*-vs-)[[A-Za-z0-9-]]+$)}")]
     public async Task<IActionResult> CompareThree(string slug1, string slug2, string slug3, CancellationToken ct)
     {
         return await RenderCompareAsync([slug1, slug2, slug3], isSeoIndexable: false, ct);
     }
 
-    [HttpGet("/karsilastir/{slug1:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug2:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug3:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}-vs-{slug4:regex(^(?!.*-vs-)[A-Za-z0-9-]+$)}")]
+    [HttpGet("/karsilastir/{slug1:regex(^(?!.*-vs-)[[A-Za-z0-9-]]+$)}-vs-{slug2:regex(^(?!.*-vs-)[[A-Za-z0-9-]]+$)}-vs-{slug3:regex(^(?!.*-vs-)[[A-Za-z0-9-]]+$)}-vs-{slug4:regex(^(?!.*-vs-)[[A-Za-z0-9-]]+$)}")]
     public async Task<IActionResult> CompareFour(string slug1, string slug2, string slug3, string slug4, CancellationToken ct)
     {
         return await RenderCompareAsync([slug1, slug2, slug3, slug4], isSeoIndexable: false, ct);

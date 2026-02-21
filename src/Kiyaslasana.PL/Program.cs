@@ -11,6 +11,7 @@ using Kiyaslasana.PL.Areas.Admin.Validators;
 using Kiyaslasana.PL.ViewModels.Auth;
 using Kiyaslasana.PL.Validators.Auth;
 using Kiyaslasana.PL.Infrastructure;
+using Kiyaslasana.PL.Infrastructure.Seed;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -41,6 +42,7 @@ builder.Services.AddScoped<IValidator<RegisterViewModel>, RegisterValidator>();
 
 builder.Services.AddBusinessLayer();
 builder.Services.AddDataAccessLayer(builder.Configuration);
+builder.Services.AddScoped<InitialTelefonSeeder>();
 builder.Services.Configure<CompareVisitTrackingOptions>(
     builder.Configuration.GetSection(CompareVisitTrackingOptions.SectionName));
 builder.Services.AddSingleton<ICompareVisitQueue, CompareVisitQueue>();
@@ -277,6 +279,10 @@ public partial class Program
         try
         {
             await IdentitySeeder.SeedAsync(services, configuration);
+
+            using var scope = services.CreateScope();
+            var telefonSeeder = scope.ServiceProvider.GetRequiredService<InitialTelefonSeeder>();
+            await telefonSeeder.SeedAsync();
         }
         catch (Exception ex) when (!applyMigrationsOnStartup && IsPotentialDatabaseReadinessIssue(ex))
         {
